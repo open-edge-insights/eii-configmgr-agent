@@ -1,0 +1,112 @@
+version: '3.6'
+
+services:
+  certs-dir-provisioner:
+    build:
+      context: ./certs-dir-provisioner/
+      dockerfile: ./Dockerfile
+    image: certs-dir-provisioner:v1.0
+    environment:
+      SERVICES: etcd,file-watcher,etcd_ui,
+    volumes:
+      - ./Certificates:/Certificates:rw
+
+  file-watcher:
+    depends_on:
+      - certs-dir-provisioner
+      - config-agent
+    build:
+      context: ./file-watcher/
+      dockerfile: ./Dockerfile
+    image: file-watcher:v1.0
+    container_name: file-watcher
+    network_mode: host
+    volumes:
+      - ./Certificates/file-watcher:/Certificates/file-watcher
+      - ./Certificates/rootca:/Certificates/rootca
+    command: "/Certificates/file-watcher/file-watcher_client_certificate.pem /Certificates/file-watcher/file-watcher_client_key.pem /Certificates/file-watcher/file-watcher_server_key.pem"
+
+  config-agent:
+    depends_on:
+      - certs-dir-provisioner
+    build:
+      context: ./security-agent/
+      dockerfile: ./Dockerfile
+      args:
+        ETCD_VERSION: ${ETCD_VERSION}
+    read_only: false
+    image: config-agent:v0.1
+    security_opt:
+      - no-new-privileges
+    restart: unless-stopped
+    container_name: config-agent
+    environment:
+      SERVICES: file-watcher,etcd_ui,
+      HOST_IP: $HOST_IP
+      HOST_TIME_ZONE: $HOST_TIME_ZONE
+      ETCDCTL_API: 3
+      DEV_MODE: $DEV_MODE
+      ETCD_DATA_DIR: $ETCD_DATA_DIR
+      ETCD_CLIENT_PORT: $ETCD_CLIENT_PORT
+      ETCD_PEER_PORT: $ETCD_PEER_PORT
+      ETCD_NAME: $ETCD_NAME
+      ETCD_INITIAL_CLUSTER_STATE: $ETCD_INITIAL_CLUSTER_STATE
+      ETCD_INITIAL_CLUSTER: $ETCD_INITIAL_CLUSTER
+      ETCD_ROOT_PASSWORD: $ETCD_ROOT_PASSWORD
+      no_proxy: $eii_no_proxy
+      NO_PROXY: $eii_no_proxy
+      http_proxy: $http_proxy
+      https_proxy: $https_proxy
+    network_mode: host
+    ipc: "none"
+    volumes:
+      - ./Certificates:/EII/Certificates:rw
+
+  ## Define ETCD UI service - must be included to view ETCD data over web UI
+  #   ia_etcd_ui:
+  #     read_only: true
+  #     image: ${DOCKER_REGISTRY}ia_etcd_ui:${EII_VERSION}
+  #     container_name: ia_etcd_ui
+  #     hostname: ia_etcd_ui
+  #     network_mode: host
+  #     restart: unless-stopped
+  #     security_opt:
+  #     - no-new-privileges
+  #     healthcheck:
+  #       test: ["CMD-SHELL", "exit", "0"]
+  #       interval: 5m
+  #     environment:
+  #       AppName: "EtcdUI"
+  #       DEV_MODE: ${DEV_MODE}
+  #       NGINX_PORT: 7071
+  #       CertType: "pem"
+  #       no_proxy: ${eii_no_proxy},${ETCD_HOST}
+  #       ETCD_HOST: ${ETCD_HOST}
+  #       ETCD_CLIENT_PORT: ${ETCD_CLIENT_PORT}
+  #       ETCD_PREFIX: ${ETCD_PREFIX}
+  #       CONFIGMGR_CACERT: "/Certificates/rootca/cacert.pem"
+  #       CONFIGMGR_KEY: "/Certificates/etcd_ui/etcd_ui_client_key.pem"
+  #       CONFIGMGR_CERT: "/Certificates/etcd_ui/etcd_ui_client_certificate.pem"
+  #     volumes:
+  #       - "vol_etcd_keeper:/opt/nginx"
+  #       - ./Certificates/rootca:/Certificates/rootca
+  #       - ./Certificates/etcd_ui:/Certificates/etcd_ui
+  #       # etcd_EtcdUI_cert
+  #       #- ./Certificates/etcd_ui/etcdui_client_certificate.pem:/run/secrets/etcd_EtcdUI_cert
+  #       # etcd_EtcdUI_key
+  #       #- ./Certificates/etcd_ui/etcd_ui_client_key.pem:/run/secrets/etcd_EtcdUI_key
+  #       # ca_etcd
+  #       #- ./Certificates/rootca/cacert.pem:/run/secrets/ca_etcd
+  #     user: ${EII_UID}
+  #     ipc: "none"
+  #       # secrets:
+  #       #   - ca_etcd
+  #       #   - etcd_etcduser_cert
+  #       #   - etcd_etcduser_key
+  #       #
+volumes:
+  vol_etcd_keeper:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
