@@ -3,8 +3,8 @@ version: '3.6'
 services:
   ia_config_agent:
     build:
-      context: ./agent/
-      dockerfile: ./Dockerfile
+      context: $PWD/../ConfigAgent/agent
+      dockerfile: $PWD/../ConfigAgent/agent/Dockerfile
       args:
         EII_VERSION: ${EII_VERSION}
         ETCD_VERSION: ${ETCD_VERSION}
@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
     container_name: ia_config_agent
     environment:
-      SERVICES:  EtcdUI,CppPublisher,WebVisualizer,OpcuaExport
+      SERVICES: ""
       AppName: "ConfigAgent"
       HOST_IP: $HOST_IP
       HOST_TIME_ZONE: $HOST_TIME_ZONE
@@ -41,8 +41,8 @@ services:
 
   ia_etcd_provision:
     build:
-      context: ./provision
-      dockerfile: ./Dockerfile.provision
+      context: $PWD/../ConfigAgent/provision
+      dockerfile: $PWD/../ConfigAgent/provision/Dockerfile.provision
       args:
         EII_VERSION: ${EII_VERSION}
     read_only: true

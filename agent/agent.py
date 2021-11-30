@@ -4,6 +4,7 @@ import os
 import time
 import signal
 import argparse
+from threading import *
 from distutils.util import strtobool
 
 from configd.log import *
@@ -63,16 +64,22 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 log = get_logger(__name__)
 
-try:
-    if devMode:
-        # Initialize config daemon in devmode
-        daemon = ConfigDaemon("", services, devMode)
-    else:
-        # Initialize config daemon in devmode
-        daemon = ConfigDaemon(args.certs_dir, services, devMode)
+def config_daemon():
+    try:
+        if devMode:
+            # Initialize config daemon in devmode
+            daemon = ConfigDaemon("", services, devMode)
+        else:
+            # Initialize config daemon in devmode
+            daemon = ConfigDaemon(args.certs_dir, services, devMode)
 
-    log.info('Running...')
-    while not stop:
-        time.sleep(1)
-except Exception as e:
-    log.exception(f'Error running config daemon: {e}')
+        log.info('Running...')
+        while not stop:
+            time.sleep(1)
+    except Exception as e:
+        log.exception(f'Error running config daemon: {e}')
+
+T = Thread(target = config_daemon)
+
+# start thread
+T.start()
