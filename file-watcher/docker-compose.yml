@@ -1,0 +1,14 @@
+version: '3.6'
+
+services:
+    secret-watcher:
+        build:
+            context: ./
+            dockerfile: ./Dockerfile
+        image: secret-watcher:v0.1
+        container_name: secret-watcher
+          #         secrets:
+          #             - the-secret
+          # secrets:
+          #   the-secret:
+          #     file: ./test_secret.txt

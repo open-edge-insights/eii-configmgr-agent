@@ -1,0 +1,10 @@
+**/__pycache__
+**/.DS_Store
+**/*.swp
+**/*.swo
+**/*.pem
+**/*.der
+**/Certificates/
+**/serial
+**/*.tar
+dc-vol-test/test/
