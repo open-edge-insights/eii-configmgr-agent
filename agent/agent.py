@@ -4,13 +4,29 @@ import os
 import time
 import signal
 import argparse
+from distutils.util import strtobool
+
 from configd.log import *
-from configd.daemon import ConfigDaemon
+from configd.config_daemon import ConfigDaemon
 
 
 # Globals
 stop = False
 
+def _execute_cmd(cmd):
+    """Executes the shell cmd
+
+    :param cmd: shell cmd
+    :type cmd: str
+    :return: process returncode
+    :rtype: int
+    """
+    try:
+        process = subprocess.run(cmd, stdout=subprocess.DEVNULL)
+        return process.returncode
+    except Exception as ex:
+        print(ex)
+        return -1
 
 def signal_handler(sig, frame):
     """SIGTERM signal handler.
@@ -19,6 +35,7 @@ def signal_handler(sig, frame):
 
 
 # Parse command line arguments
+devMode = bool(strtobool(os.environ['DEV_MODE']))
 ap = argparse.ArgumentParser()
 ap.add_argument('-d', '--dir', dest='certs_dir', default='Certificates',
                 help='Output directory for certificates')
@@ -47,11 +64,15 @@ signal.signal(signal.SIGTERM, signal_handler)
 log = get_logger(__name__)
 
 try:
-    # Initialize daemon
-    daemon = ConfigDaemon(args.certs_dir, services)
+    if devMode:
+        # Initialize config daemon in devmode
+        daemon = ConfigDaemon("", services, devMode)
+    else:
+        # Initialize config daemon in devmode
+        daemon = ConfigDaemon(args.certs_dir, services, devMode)
 
     log.info('Running...')
     while not stop:
         time.sleep(1)
 except Exception as e:
-    log.exception(f'Error running daemon: {e}')
+    log.exception(f'Error running config daemon: {e}')

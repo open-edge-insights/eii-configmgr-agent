@@ -5,6 +5,5 @@
 **/*.pem
 **/*.der
 **/Certificates/
-**/serial
 **/*.tar
-dc-vol-test/test/
+

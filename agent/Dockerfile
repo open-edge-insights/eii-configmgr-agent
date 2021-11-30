@@ -21,6 +21,9 @@ RUN pip3 install setuptools
 RUN mkdir -p /EII/etcd/data
 RUN mkdir -p /EII/Certificates
 
+ENV http_proxy http://proxy.iind.intel.com:911
+ENV https_proxy http://proxy.iind.intel.com:911
+
 ARG ETCD_VERSION
 RUN curl -L https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz -o /EII/etcd-${ETCD_VERSION}-linux-amd64.tar.gz && \
     tar -xvf /EII/etcd-${ETCD_VERSION}-linux-amd64.tar.gz -C /EII/etcd --strip 1 && \
@@ -30,10 +33,10 @@ WORKDIR /EII/etcd/
 
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
-
+USER root
 COPY config/ ./config/
 COPY scripts/ ./scripts/
 COPY configd/ ./configd/
-COPY daemon.py .
-
-ENTRYPOINT ["python3", "-u", "daemon.py", "-d", "/EII/Certificates", "-l", "DEBUG"]
+COPY agent.py .
+RUN export PYTHONPATH=$PYTHONPATH:./configd
+ENTRYPOINT ["python3", "-u", "agent.py", "-d", "/EII/Certificates", "-l", "DEBUG"]

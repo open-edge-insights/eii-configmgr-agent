@@ -1,0 +1,287 @@
+{
+    "/CppPublisher/config": {
+        "loop_interval": 1,
+        "cert_type": ["zmq", "der"]
+    },
+    "/CppPublisher/interfaces": {
+        "Publishers": [
+            {
+                "AllowedClients": [
+                    "CppSubscriber"
+                ],
+                "EndPoint": "0.0.0.0:60088",
+                "Name": "sample_pub",
+                "Topics": [
+                    "publish_test"
+                ],
+                "Type": "zmq_tcp"
+            }
+        ],
+        "Servers": [
+            {
+                "AllowedClients": [
+                    "CppSubscriber"
+                ],
+                "EndPoint": "0.0.0.0:60078",
+                "Name": "echo_service",
+                "Type": "zmq_tcp"
+            }
+        ]
+    },
+    "/CppSubscriber/config": {
+        "loop_interval": 1,
+        "cert_type": ["zmq"]
+    },
+    "/CppSubscriber/interfaces": {
+        "Clients": [
+            {
+                "EndPoint": "ia_cpp_publisher:60078",
+                "Name": "sample_client",
+                "ServerAppName": "CppPublisher",
+                "Type": "zmq_tcp"
+            }
+        ],
+        "Subscribers": [
+            {
+                "EndPoint": "ia_cpp_publisher:60088",
+                "Name": "sample_sub",
+                "PublisherAppName": "CppPublisher",
+                "Topics": [
+                    "publish_test"
+                ],
+                "Type": "zmq_tcp"
+            }
+        ]
+    },
+    "/EtcdUI/config": {
+        "cert_type": ["pem"]
+    },
+    "/EtcdUI/interfaces": {},
+    "/GlobalEnv/": {
+        "C_LOG_LEVEL": "DEBUG",
+        "ETCD_KEEPER_PORT": "7070",
+        "GO_LOG_LEVEL": "INFO",
+        "GO_VERBOSE": "2",
+        "PY_LOG_LEVEL": "DEBUG"
+    },
+    "/VideoAnalytics/config": {
+        "cert_type": ["zmq"],
+        "encoding": {
+            "level": 95,
+            "type": "jpeg"
+        },
+        "max_workers": 4,
+        "queue_size": 10,
+        "udfs": [
+            {
+                "device": "CPU",
+                "model_bin": "common/video/udfs/python/pcb/ref/model_2.bin",
+                "model_xml": "common/video/udfs/python/pcb/ref/model_2.xml",
+                "name": "pcb.pcb_classifier",
+                "ref_config_roi": "common/video/udfs/python/pcb/ref/roi_2.json",
+                "ref_img": "common/video/udfs/python/pcb/ref/ref.png",
+                "type": "python"
+            }
+        ]
+    },
+    "/VideoAnalytics/interfaces": {
+        "Publishers": [
+            {
+                "AllowedClients": [
+                    "*"
+                ],
+                "EndPoint": "0.0.0.0:65013",
+                "Name": "default",
+                "Topics": [
+                    "camera1_stream_results"
+                ],
+                "Type": "zmq_tcp"
+            }
+        ],
+        "Subscribers": [
+            {
+                "EndPoint": "/EII/sockets",
+                "Name": "default",
+                "PublisherAppName": "VideoIngestion",
+                "Topics": [
+                    "camera1_stream"
+                ],
+                "Type": "zmq_ipc",
+                "zmq_recv_hwm": 50
+            }
+        ]
+    },
+    "/VideoIngestion/config": {
+        "cert_type": ["zmq"],
+        "encoding": {
+            "level": 95,
+            "type": "jpeg"
+        },
+        "ingestor": {
+            "loop_video": true,
+            "pipeline": "./test_videos/pcb_d2000.avi",
+            "poll_interval": 0.2,
+            "queue_size": 10,
+            "type": "opencv"
+        },
+        "max_workers": 4,
+        "sw_trigger": {
+            "init_state": "running"
+        },
+        "udfs": [
+            {
+                "n_left_px": 1000,
+                "n_right_px": 1000,
+                "n_total_px": 300000,
+                "name": "pcb.pcb_filter",
+                "scale_ratio": 4,
+                "training_mode": "false",
+                "type": "python"
+            }
+        ]
+    },
+    "/VideoIngestion/interfaces": {
+        "Publishers": [
+            {
+                "AllowedClients": [
+                    "VideoAnalytics",
+                    "Visualizer",
+                    "WebVisualizer",
+                    "TLSRemoteAgent",
+                    "RestDataExport"
+                ],
+                "EndPoint": "/EII/sockets",
+                "Name": "default",
+                "Topics": [
+                    "camera1_stream"
+                ],
+                "Type": "zmq_ipc"
+            }
+        ],
+        "Servers": [
+            {
+                "AllowedClients": [
+                    "*"
+                ],
+                "EndPoint": "0.0.0.0:64013",
+                "Name": "default",
+                "Type": "zmq_tcp"
+            }
+        ]
+    },
+    "/Visualizer/config": {
+        "cert_type": ["zmq"],
+        "draw_results": "true",
+        "labels": {
+            "camera1_stream_results": {
+                "0": "MISSING",
+                "1": "SHORT"
+            },
+            "gva_safety_gear_stream_results": {
+                "1": "safety_helmet",
+                "2": "safety_jacket",
+                "3": "Safe",
+                "4": "Violation"
+            },
+            "native_safety_gear_stream_results": {
+                "1": "safety_helmet",
+                "2": "safety_jacket",
+                "3": "Safe",
+                "4": "Violation"
+            },
+            "py_safety_gear_stream_results": {
+                "1": "safety_helmet",
+                "2": "safety_jacket",
+                "3": "Safe",
+                "4": "Violation"
+            }
+        },
+        "save_image": "false"
+    },
+    "/Visualizer/interfaces": {
+        "Subscribers": [
+            {
+                "EndPoint": "ia_video_analytics:65013",
+                "Name": "default",
+                "PublisherAppName": "VideoAnalytics",
+                "Topics": [
+                    "camera1_stream_results"
+                ],
+                "Type": "zmq_tcp"
+            }
+        ]
+    },
+    "/WebVisualizer/config": {
+        "cert_type": ["zmq","pem"],
+        "dev_port": 5001,
+        "draw_results": "true",
+        "labels": {
+            "camera1_stream_results": {
+                "0": "MISSING",
+                "1": "SHORT"
+            },
+            "gva_safety_gear_stream_results": {
+                "1": "safety_helmet",
+                "2": "safety_jacket",
+                "3": "Safe",
+                "4": "Violation"
+            },
+            "native_safety_gear_stream_results": {
+                "1": "safety_helmet",
+                "2": "safety_jacket",
+                "3": "Safe",
+                "4": "Violation"
+            },
+            "py_safety_gear_stream_results": {
+                "1": "safety_helmet",
+                "2": "safety_jacket",
+                "3": "Safe",
+                "4": "Violation"
+            }
+        },
+        "password": "admin@123",
+        "port": 5000,
+        "username": "admin"
+    },
+    "/WebVisualizer/interfaces": {
+        "Subscribers": [
+            {
+                "EndPoint": "ia_video_analytics:65013",
+                "Name": "default",
+                "PublisherAppName": "VideoAnalytics",
+                "Topics": [
+                    "camera1_stream_results"
+                ],
+                "Type": "zmq_tcp"
+            }
+        ]
+    },
+    "/OpcuaExport/interfaces": {
+        "Subscribers": [
+            {
+                "Name": "defaultVA",
+                "Type": "zmq_tcp",
+                "EndPoint": "ia_video_analytics:65013",
+                "PublisherAppName": "VideoAnalytics",
+                "Topics": [
+                    "camera1_stream_results"
+                ]
+            },
+            {
+                "Name": "defaultInflux",
+                "Type": "zmq_tcp",
+                "EndPoint": "ia_influxdbconnector:65034",
+                "PublisherAppName": "InfluxDBConnector",
+                "Topics": [
+                    "point_classifier_results"
+                ]
+            }
+        ]
+
+    },
+    "/OpcuaExport/config": {
+        "cert_type": ["zmq", "der"],
+        "OpcuaDatabusTopics": ["opcua_cam_serial1_results", "opcua_cam_serial2_results", "opcua_point_classifier_results"],
+        "OpcuaExportCfg": "opcua,0.0.0.0:65003"
+    }
+}

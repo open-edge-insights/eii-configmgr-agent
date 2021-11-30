@@ -78,6 +78,14 @@ def openssl_ca(cnf_path, *args, **kwargs):
         raise RuntimeError(
                 f'openssl ca failed:\n{exc.output.decode("utf-8")}') from exc
 
+def openssl_rsa(*args, **kwargs):
+    print("=>\t[openssl_rsa]")
+    cmd = ['openssl', 'rsa'] + list(args)
+    try:
+        sp.check_output(cmd, stderr=sp.STDOUT)
+    except sp.CalledProcessError as exc:
+        raise RuntimeError(
+                f'openssl RSA failed:\n{exc.output.decode("utf-8")}') from exc
 
 def generate_root_ca(
         common_name, key_path, cert_path, cert_cer_path,
@@ -104,9 +112,8 @@ def generate_root_ca(
         # Delete the CNF file
         os.remove(cnf_path)
 
-
 def generate_cert_key_pair(
-        key, peer, private_key_path, cert_path, client_alt_name,
+        key, peer, opts, base_dir, private_key_path, cert_path, client_alt_name,
         server_alt_name, req_pem_path, pa_cert_path, pa_key_path,
         pa_certs_path, ssl_key_length=3072, cnf_template='config/openssl.cnf'):
     """Generate certificate and key pair.
@@ -124,17 +131,34 @@ def generate_cert_key_pair(
                     '-outform', 'PEM',
                     '-subj',    f'/CN={key}/O={peer}/L=$$$/',
                     '-nodes')
-
-        openssl_ca(cnf_path,
-                   '-days',    '3650',
-                   '-cert',    pa_cert_path,
-                   '-keyfile', pa_key_path,
-                   '-in',      req_pem_path,
-                   '-out',     cert_path,
-                   '-outdir',  pa_certs_path,
-                   '-notext',
-                   '-batch',
-                   '-extensions', f'{peer}_extensions')
+        if key not in ["OpcuaExport_Server","opcua"]:
+            openssl_ca(cnf_path,
+                    '-days',    '3650',
+                    '-cert',    pa_cert_path,
+                    '-keyfile', pa_key_path,
+                    '-in',      req_pem_path,
+                    '-out',     cert_path,
+                    '-outdir',  pa_certs_path,
+                    '-notext',
+                    '-batch',
+                    '-extensions', f'{peer}_extensions')
+        if 'output_format' in opts and opts['output_format'] == 'DER':
+            if key not in ["OpcuaExport_Server","opcua"]:
+                openssl_x509("-in",      cert_path,
+                            "-out",     f'{base_dir}_{peer}_certificate.der',
+                            "-outform", "DER")
+                openssl_rsa("-in",  private_key_path,
+                            "-out", f'{base_dir}_{peer}_key.der',
+                            "-inform", "PEM",
+                            "-outform", "DER")
+            else:
+                openssl_x509("-in",      req_pem_path,
+                            "-out",     f'{base_dir}_{peer}_certificate.der',
+                            "-outform", "DER")
+                openssl_rsa("-in",  private_key_path,
+                            "-out", f'{base_dir}_{peer}_key.der',
+                            "-inform", "PEM",
+                            "-outform", "DER")
     finally:
         # Delete CNF file
         os.remove(cnf_path)
