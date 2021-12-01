@@ -29,15 +29,14 @@ from configd.log import get_logger
 log = get_logger('util')
 
 # Return dict with service:cert_type
-def get_cert_type(services):
+def get_cert_type(services, config_file):
     dict_items={}
-    with open('/EII/etcd/config/eii_config.json') as f:
+    with open(config_file) as f:
         config = json.load(f)
     for key, value in config.items():
         service_conf = key.split("/")
-        if(service_conf[2] == 'config'):
-            if 'cert_type' in list(value.keys()):
-                dict_items[service_conf[1]] = value['cert_type']
+        if(service_conf[2] == 'cert_type'):
+            dict_items[service_conf[1]] = list(value)
     return dict_items
 
 def exec_script(script, *args):
@@ -81,9 +80,9 @@ def get_server_cert_key(appname, certtype, certificates_dir_path):
     server_key_cert = {}
     cert_ext = None
     if 'pem' in certtype:
-        cert_ext = ".pem"
+        cert_ext = '.pem'
     elif 'der' in certtype:
-        cert_ext = ".der"
+        cert_ext = '.der'
     cert_file = certificates_dir_path + appname + "_Server/" + appname \
         + "_Server_server_certificate" + cert_ext
 
@@ -91,28 +90,28 @@ def get_server_cert_key(appname, certtype, certificates_dir_path):
         + "_Server_server_key" + cert_ext
     ca_certificate = certificates_dir_path + "rootca/cacert" + cert_ext
 
-    if cert_ext == ".pem":
+    if cert_ext == '.pem':
         with open(cert_file, 'r') as s_cert:
             server_cert = s_cert.read()
-            server_key_cert["server_cert"] = server_cert
+            server_key_cert['server_cert'] = server_cert
         with open(key_file, 'r') as s_key:
             server_key = s_key.read()
-            server_key_cert["server_key"] = server_key
+            server_key_cert['server_key'] = server_key
         with open(ca_certificate, 'r') as cert:
             ca_cert = cert.read()
-            server_key_cert["ca_cert"] = ca_cert
+            server_key_cert['ca_cert'] = ca_cert
     if cert_ext == ".der":
         with open(cert_file, 'rb') as s_cert:
             server_cert = s_cert.read()
-            server_key_cert["server_cert"] = \
-                base64.standard_b64encode(server_cert).decode("utf-8")
+            server_key_cert['server_cert'] = \
+                base64.standard_b64encode(server_cert).decode('utf-8')
         with open(key_file, 'rb') as s_key:
             server_key = s_key.read()
-            server_key_cert["server_key"] = \
-                base64.standard_b64encode(server_key).decode("utf-8")
+            server_key_cert['server_key'] = \
+                base64.standard_b64encode(server_key).decode('utf-8')
         with open(ca_certificate, 'rb') as cert:
             ca_cert = cert.read()
-            server_key_cert["ca_cert"] = \
-                base64.standard_b64encode(ca_cert).decode("utf-8")
+            server_key_cert['ca_cert'] = \
+                base64.standard_b64encode(ca_cert).decode('utf-8')
 
     return server_key_cert

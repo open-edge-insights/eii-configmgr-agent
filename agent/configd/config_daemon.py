@@ -18,33 +18,24 @@ def assert_env_var(var):
 class ConfigDaemon:
     """Configuration Daemon
     """
-    def __init__(self, certs_dir, services, dev_mode):
+    def __init__(self, certs_dir, services, dev_mode, config_file):
         """Constructor
 
         :param str certs_dir: Certificate output directory
         :param list services: List of services to manage
         """
         self.log = get_logger('configd')
-
-        # TODO: RootCA option
-
         self.certs_dir = certs_dir
         self.services = services
         self.dev_mode = dev_mode
         self.etcd_proc = None
-
-        if dev_mode:
-            # Provision initial ETCD settings
-            self._setup_etcd_env()
-            self._start_etcd()
-            self._health_check()
-
+        self.config_file = config_file
         if not dev_mode:
             opts = {}
         
             for service in self.services:
-                service_cert_dir = certs_dir + "/" + service
-                self.log.info(f'Creating service certs directory:"{service_cert_dir}"')
+                service_cert_dir =  os.path.join(certs_dir, service)
+                self.log.info(f'Creating certs directory for service: "{service_cert_dir}"')
                 os.makedirs(service_cert_dir, exist_ok=True)
 
             self.rootca_dir = os.path.join(certs_dir, 'rootca')
@@ -66,28 +57,28 @@ class ConfigDaemon:
                     client_alt_name='rootca',
                     server_alt_name='rootca')
 
-            with open("config/x509_cert_config.json") as f:
+            with open('config/x509_cert_config.json') as f:
                 opts = json.load(f)
 
-            self.etcd_server_key = certs_dir + "/etcdserver/etcdserver_server_key.pem"
-            self.etcd_server_cert = certs_dir + "/etcdserver/etcdserver_server_certificate.pem"
-            self.etcd_client_key = certs_dir + "/root/root_client_key.pem"
-            self.etcd_client_cert = certs_dir + "/root/root_client_certificate.pem"
+            self.etcd_server_key = os.path.join(certs_dir, 'etcdserver', 'etcdserver_server_key.pem')
+            self.etcd_server_cert = os.path.join(certs_dir, 'etcdserver', 'etcdserver_server_certificate.pem')
+            self.etcd_client_key = os.path.join(certs_dir, 'root', 'root_client_key.pem')
+            self.etcd_client_cert = os.path.join(certs_dir, 'root', 'root_client_certificate.pem')
 
             # get dict in the form of <service:cert_type>
-            app_cert_type = get_cert_type(self.services)
+            app_cert_type = get_cert_type(self.services, self.config_file)
             for service, cert_type in app_cert_type.items():
                 cert_details = {'client_alt_name': ''}
-                opts["certs"].append({service:cert_details})
-                if service == "OpcuaExport":
-                    opts["certs"].append({"opcua":{"client_alt_name": "", "output_format": "DER"}})
+                opts['certs'].append({service:cert_details})
+                if service == 'OpcuaExport':
+                    opts['certs'].append({'opcua':{'client_alt_name': '', 'output_format': 'DER'}})
 
                 if 'pem' in cert_type:
-                    cert_name = service + "_Server"
+                    cert_name = service + '_Server'
                     cert_details = {'server_alt_name': ''}
                     opts["certs"].append({cert_name:cert_details})
                 if 'der' in cert_type:
-                    cert_name = service + "_Server"
+                    cert_name = service + '_Server'
                     cert_details = {'server_alt_name': '', 'output_format': 'DER'}
                     opts["certs"].append({cert_name:cert_details})
 
@@ -101,11 +92,11 @@ class ConfigDaemon:
         self._health_check()
 
     def _generate_certs(self, opts):
-        for cert in opts["certs"]:
+        for cert in opts['certs']:
             for service, cert_opts in cert.items():
-                if "server_alt_name" in cert_opts:
+                if 'server_alt_name' in cert_opts:
                     self.generate_service_certs(service, 'server', cert_opts)
-                if "client_alt_name" in cert_opts:
+                if 'client_alt_name' in cert_opts:
                     self.generate_service_certs(service, 'client', cert_opts)
     
     def generate_service_certs(self, service, peer, opts):
@@ -118,10 +109,10 @@ class ConfigDaemon:
         assert os.path.exists(base_dir), f'{base_dir} does not exist'
 
         base_name = os.path.join(base_dir, f'{service}')
-        server_key = ''
-        server_cert = ''
-        client_key = ''
-        client_cert = ''
+        server_key = None
+        server_cert = None
+        client_key = None
+        client_cert = None
 
         if 'output_format' in opts:
             server_key = f'{base_name}_{peer}_key.key'
@@ -184,7 +175,7 @@ class ConfigDaemon:
         """Run until the ETCD process stops.
         """
         assert self.etcd_proc is not None, 'ETCD not running'
-        self.etcd.proc.wait()
+        self.etcd_proc.wait()
 
     def _setup_dirs(self):
         """Create all of the directories.
