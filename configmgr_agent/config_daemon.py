@@ -1,12 +1,34 @@
+#!/usr/bin/python3
+# Copyright (c) 2021 Intel Corporation.
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 """Configuration daemon
 """
 import os
 import subprocess as sp
 import json
+import re
 
-from configd.log import get_logger
-from configd.cert_utils import generate_root_ca, generate_cert_key_pair
-from configd.util import get_cert_type, exec_script
+from configmgr_agent.log import get_logger
+from configmgr_agent.cert_utils import generate_root_ca, generate_cert_key_pair
+from configmgr_agent.util import get_cert_type, exec_script
 
 
 def assert_env_var(var):
@@ -16,7 +38,8 @@ def assert_env_var(var):
 
 
 class ConfigDaemon:
-    """Configuration Daemon
+    """Configuration Daemon to generate service respective certs,
+       setup environment for etcd and start etcd
     """
     def __init__(self, certs_dir, services, dev_mode, config_file):
         """Constructor
@@ -24,14 +47,14 @@ class ConfigDaemon:
         :param str certs_dir: Certificate output directory
         :param list services: List of services to manage
         """
-        self.log = get_logger('configd')
+        self.log = get_logger('configmgr_agent')
         self.certs_dir = certs_dir
         self.services = services
         self.dev_mode = dev_mode
         self.etcd_proc = None
         self.config_file = config_file
         if not dev_mode:
-            opts = {}
+            self.opts = {}
         
             for service in self.services:
                 service_cert_dir =  os.path.join(certs_dir, service)
@@ -58,7 +81,7 @@ class ConfigDaemon:
                     server_alt_name='rootca')
 
             with open('config/x509_cert_config.json') as f:
-                opts = json.load(f)
+                self.opts = json.load(f)
 
             self.etcd_server_key = os.path.join(certs_dir, 'etcdserver', 'etcdserver_server_key.pem')
             self.etcd_server_cert = os.path.join(certs_dir, 'etcdserver', 'etcdserver_server_certificate.pem')
@@ -69,34 +92,43 @@ class ConfigDaemon:
             app_cert_type = get_cert_type(self.services, self.config_file)
             for service, cert_type in app_cert_type.items():
                 cert_details = {'client_alt_name': ''}
-                opts['certs'].append({service:cert_details})
+                self.opts['certs'].append({service:cert_details})
                 if service == 'OpcuaExport':
-                    opts['certs'].append({'opcua':{'client_alt_name': '', 'output_format': 'DER'}})
+                    self.opts['certs'].append({'opcua':{'client_alt_name': '', 'output_format': 'DER'}})
 
                 if 'pem' in cert_type:
                     cert_name = service + '_Server'
                     cert_details = {'server_alt_name': ''}
-                    opts["certs"].append({cert_name:cert_details})
+                    self.opts["certs"].append({cert_name:cert_details})
                 if 'der' in cert_type:
                     cert_name = service + '_Server'
                     cert_details = {'server_alt_name': '', 'output_format': 'DER'}
-                    opts["certs"].append({cert_name:cert_details})
+                    self.opts["certs"].append({cert_name:cert_details})
 
             # Generate certificates for all services
             self.log.info('Generating service certificates')
-            self._generate_certs(opts)
+            self._generate_certs()
 
         # Provision initial ETCD settings
         self._setup_etcd_env()
         self._start_etcd()
         self._health_check()
 
-    def _generate_certs(self, opts):
-        for cert in opts['certs']:
+    def _generate_certs(self):
+        for cert in self.opts['certs']:
+
             for service, cert_opts in cert.items():
                 if 'server_alt_name' in cert_opts:
+                    if service == 'OpcuaExport':
+                        os.environ["SAN"] = \
+                            "IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*," + \
+                            "DNS:localhost,URI:urn:open62541.server.application"
                     self.generate_service_certs(service, 'server', cert_opts)
                 if 'client_alt_name' in cert_opts:
+                    if service == 'opuca':
+                        os.environ["SAN"] = \
+                            "IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*," + \
+                            "DNS:localhost,URI:urn:open62541.client.application"
                     self.generate_service_certs(service, 'client', cert_opts)
     
     def generate_service_certs(self, service, peer, opts):
@@ -202,7 +234,7 @@ class ConfigDaemon:
         if 'SSL_KEY_LENGTH' not in os.environ:
             os.environ['SSL_KEY_LENGTH'] = '3072'
 
-        os.environ['SAN'] = ('IP:127.0.0.1,DNS:etcd,DNS:*,DNS:localhost,'
+        os.environ['SAN'] = ('IP:127.0.0.1,DNS:ia_configmgr_agent,DNS:*,DNS:localhost,'
                              'URI:urn:unconfigured:application')
         if 'SSL_SAN_IP' not in os.environ:
             os.environ['SSL_SAN_IP'] = ''
@@ -213,6 +245,20 @@ class ConfigDaemon:
         else:
             os.environ['SAN'] = 'IP:' + os.environ['HOST_IP'] + ',' + \
                     os.environ['SAN']
+
+        if os.environ['ETCD_HOST'] != '':
+            pattern = '^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$'
+            match = re.match(pattern, os.environ['ETCD_HOST'])
+            if match:
+                self.log.info('ETCD_HOST env value is IP')
+                os.environ["SAN"] = "IP:" + \
+                                    os.environ["ETCD_HOST"] + "," + \
+                                    os.environ["SAN"]
+            else:
+                self.log.info('ETCD_HOST env value is DNS')
+                os.environ["SAN"] = "DNS:" + \
+                                    os.environ["ETCD_HOST"] + "," + \
+                                    os.environ["SAN"]
         os.environ['TLS_CIPHERS'] = (
                 'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,'
                 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,'

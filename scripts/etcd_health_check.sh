@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2020 Intel Corporation.
+# Copyright (c) 2021 Intel Corporation.
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-./etcdctl user add root:$1
-./etcdctl role add root
-./etcdctl user grant-role root root
-./etcdctl auth enable
+# Usage: ./etcd_health_check.sh
+a=0
+b=1
+echo "Checking ETCD endpoint health"
+while [ $a -lt 1 -a $b -lt 1000 ]
+do
+  a=$(./etcdctl endpoint health 2>&1 | grep " healthy" | wc -l)
+  b=`expr $b + 1`
+  sleep 0.5
+done

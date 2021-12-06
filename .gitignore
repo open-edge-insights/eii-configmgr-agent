@@ -2,8 +2,5 @@
 **/.DS_Store
 **/*.swp
 **/*.swo
-**/*.pem
-**/*.der
-**/Certificates/
 **/*.tar
-
+config/eii_config.json

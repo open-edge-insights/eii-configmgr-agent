@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2020 Intel Corporation.
+# Copyright (c) 2021 Intel Corporation.
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-./etcdctl user add $1 --no-password
-./etcdctl role add $1
-./etcdctl user grant-role $1 $1
-./etcdctl role grant-permission $1 readwrite /$1/ --prefix
-./etcdctl role grant-permission $1 readwrite /$1/datastore --prefix
-./etcdctl role grant-permission $1 read /Publickeys/ --prefix
-./etcdctl role grant-permission $1 read /GlobalEnv/ --prefix
+# Usage: ./etcd_enable_auth.sh <ETCD_ROOT_PASSWORD>
+./etcdctl user add root:$1
+./etcdctl role add root
+./etcdctl user grant-role root root
+# ./etcdctl auth enable
