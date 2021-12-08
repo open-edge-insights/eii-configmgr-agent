@@ -39,18 +39,25 @@ RUN pip3 install --upgrade pip
 
 RUN mkdir -p /EII/etcd/data /EII/Certificates
 
+
 ARG ETCD_VERSION
 RUN curl -L https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz -o /EII/etcd-${ETCD_VERSION}-linux-amd64.tar.gz && \
     tar -xvf /EII/etcd-${ETCD_VERSION}-linux-amd64.tar.gz -C /EII/etcd --strip 1 && \
     rm -f /EII/etcd-${ETCD_VERSION}-linux-amd64.tar.gz
 
+ARG EII_UID
+ARG EII_USER_NAME
+RUN groupadd -g $EII_UID $EII_USER_NAME
+RUN useradd -r -s /bin/bash -g $EII_UID -u $EII_UID $EII_USER_NAME
+
 WORKDIR /EII/etcd/
 ENV PYTHONPATH=$PYTHONPATH:./configmgr_agent
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
-# USER root
 COPY config/ ./config/
 COPY scripts/ ./scripts/
 COPY configmgr_agent/ ./configmgr_agent/
 COPY agent.py .
-ENTRYPOINT ["python3", "-u", "agent.py", "-d", "/EII/Certificates", "-l", "DEBUG", "-c", "/EII/etcd/config/eii_config.json"]
+COPY entrypoint.sh ./entrypoint.sh
+ENV EIIUSER=${EII_USER_NAME}
+ENTRYPOINT ["./entrypoint.sh", "python3 agent.py -d /EII/Certificates -l DEBUG -c /EII/etcd/config/eii_config.json"]

@@ -28,6 +28,8 @@ services:
       dockerfile: $PWD/../ConfigMgrAgent/Dockerfile
       args:
         EII_VERSION: ${EII_VERSION}
+        EII_USER_NAME: ${EII_USER_NAME}
+        EII_UID: ${EII_UID}
         ETCD_VERSION: ${ETCD_VERSION}
         UBUNTU_IMAGE_VERSION: ${UBUNTU_IMAGE_VERSION}
         PYTHON_VERSION: ${PYTHON_VERSION}
