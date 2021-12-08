@@ -26,19 +26,13 @@ FROM ubuntu:$UBUNTU_IMAGE_VERSION
 ARG PYTHON_VERSION
 # Setting python dev env
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3-distutils python3-minimal python3-pip && \
+    apt-get install -y --no-install-recommends python3-distutils python3-minimal python3-pip curl && \
     python3 -m pip install -U pip && \
     ln -sf /usr/bin/pip /usr/bin/pip3 && \
     pip3 install --upgrade pip && \
     rm -rf /var/lib/apt/lists/*
 
-RUN  apt update && \
-     apt install -y curl
-
-RUN pip3 install --upgrade pip
-
 RUN mkdir -p /EII/etcd/data /EII/Certificates
-
 
 ARG ETCD_VERSION
 RUN curl -L https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz -o /EII/etcd-${ETCD_VERSION}-linux-amd64.tar.gz && \
@@ -52,6 +46,7 @@ RUN useradd -r -s /bin/bash -g $EII_UID -u $EII_UID $EII_USER_NAME
 
 WORKDIR /EII/etcd/
 ENV PYTHONPATH=$PYTHONPATH:./configmgr_agent
+ENV EIIUSER=${EII_USER_NAME}
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 COPY config/ ./config/
@@ -59,5 +54,5 @@ COPY scripts/ ./scripts/
 COPY configmgr_agent/ ./configmgr_agent/
 COPY agent.py .
 COPY entrypoint.sh ./entrypoint.sh
-ENV EIIUSER=${EII_USER_NAME}
+RUN chown -R $EIIUSER:$EIIUSER /EII/etcd
 ENTRYPOINT ["./entrypoint.sh", "python3 agent.py -d /EII/Certificates -l DEBUG -c /EII/etcd/config/eii_config.json"]

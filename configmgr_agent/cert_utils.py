@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # Copyright (c) 2021 Intel Corporation.
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -99,6 +98,7 @@ def openssl_ca(cnf_path, *args, **kwargs):
         raise RuntimeError(
                 f'openssl ca failed:\n{exc.output.decode("utf-8")}') from exc
 
+
 def openssl_rsa(*args, **kwargs):
     cmd = ['openssl', 'rsa'] + list(args)
     try:
@@ -107,7 +107,8 @@ def openssl_rsa(*args, **kwargs):
         raise RuntimeError(
                 f'openssl RSA failed:\n{exc.output.decode("utf-8")}') from exc
 
-def generate_root_ca(
+
+def generate_rootca(
         common_name, key_path, cert_path, cert_cer_path,
         client_alt_name=None, server_alt_name=None, ssl_key_length=3072,
         cnf_template='config/openssl.cnf'):
@@ -131,6 +132,7 @@ def generate_root_ca(
     finally:
         # Delete the CNF file
         os.remove(cnf_path)
+
 
 def generate_cert_key_pair(
         key, peer, opts, base_dir, private_key_path, cert_path, client_alt_name,

@@ -64,4 +64,3 @@ services:
       - ./Certificates:/EII/Certificates:rw
       - ./Certificates/root:/EII/Certificates/root
       - ./Certificates/rootca:/EII/Certificates/rootca
-      - ./.env:/EII/.env

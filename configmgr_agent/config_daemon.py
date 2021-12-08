@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # Copyright (c) 2021 Intel Corporation.
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,7 +26,7 @@ import json
 import re
 
 from configmgr_agent.log import get_logger
-from configmgr_agent.cert_utils import generate_root_ca, generate_cert_key_pair
+from configmgr_agent.cert_utils import generate_rootca, generate_cert_key_pair
 from configmgr_agent.util import get_cert_type, exec_script
 
 
@@ -72,7 +71,7 @@ class ConfigDaemon:
             self._setup_openssl_env()
 
             self.log.info('Generating rootca')
-            generate_root_ca(
+            generate_rootca(
                     'rootca',
                     self.rootca_key_path,
                     self.rootca_cert_path,
@@ -92,18 +91,18 @@ class ConfigDaemon:
             app_cert_type = get_cert_type(self.services, self.config_file)
             for service, cert_type in app_cert_type.items():
                 cert_details = {'client_alt_name': ''}
-                self.opts['certs'].append({service:cert_details})
+                self.opts['certs'].append({service: cert_details})
                 if service == 'OpcuaExport':
                     self.opts['certs'].append({'opcua':{'client_alt_name': '', 'output_format': 'DER'}})
 
                 if 'pem' in cert_type:
                     cert_name = service + '_Server'
                     cert_details = {'server_alt_name': ''}
-                    self.opts["certs"].append({cert_name:cert_details})
+                    self.opts["certs"].append({cert_name: cert_details})
                 if 'der' in cert_type:
                     cert_name = service + '_Server'
                     cert_details = {'server_alt_name': '', 'output_format': 'DER'}
-                    self.opts["certs"].append({cert_name:cert_details})
+                    self.opts["certs"].append({cert_name: cert_details})
 
             # Generate certificates for all services
             self.log.info('Generating service certificates')
@@ -114,23 +113,24 @@ class ConfigDaemon:
         self._start_etcd()
         self._health_check()
 
+
     def _generate_certs(self):
         for cert in self.opts['certs']:
-
             for service, cert_opts in cert.items():
                 if 'server_alt_name' in cert_opts:
                     if service == 'OpcuaExport':
-                        os.environ["SAN"] = \
-                            "IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*," + \
-                            "DNS:localhost,URI:urn:open62541.server.application"
+                        os.environ['SAN'] = \
+                            'IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*,' + \
+                            'DNS:localhost,URI:urn:open62541.server.application'
                     self.generate_service_certs(service, 'server', cert_opts)
                 if 'client_alt_name' in cert_opts:
                     if service == 'opuca':
-                        os.environ["SAN"] = \
-                            "IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*," + \
-                            "DNS:localhost,URI:urn:open62541.client.application"
+                        os.environ['SAN'] = \
+                            'IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*,' + \
+                            'DNS:localhost,URI:urn:open62541.client.application'
                     self.generate_service_certs(service, 'client', cert_opts)
-    
+
+
     def generate_service_certs(self, service, peer, opts):
         """Helper function to generate the keys for a given service.
         """
@@ -184,6 +184,7 @@ class ConfigDaemon:
                     pa_key_path=self.rootca_key_path,
                     pa_certs_path=self.rootca_certs_path)
 
+
     def _start_etcd(self):
         """Start ETCD
         """
@@ -203,11 +204,16 @@ class ConfigDaemon:
         self.log.info('Executing health check on ETCD service')
         exec_script('etcd_health_check.sh')
 
+
+    """<omitted>
+    :raises AssertionError: Thrown if the ETCD process it not running
+    """
     def run_forever(self):
         """Run until the ETCD process stops.
         """
         assert self.etcd_proc is not None, 'ETCD not running'
         self.etcd_proc.wait()
+
 
     def _setup_dirs(self):
         """Create all of the directories.
@@ -222,13 +228,13 @@ class ConfigDaemon:
         with open(os.path.join(self.rootca_dir, 'index.txt.attr'), 'w') as f:
             pass
 
+
     def _setup_openssl_env(self):
-        """Setup OpenSSL of the required environmental variables.
+        """Setup required OpenSSL environmental variables.
 
         .. note:: This overwrites anything that is currently in the variable.
         """
         assert 'HOST_IP' in os.environ, 'Missing HOST_IP env var'
-        assert 'HOST_TIME_ZONE' in os.environ, 'Missing HOST_TIME_ZONE env var'
 
         os.environ['ROOTCA_DIR'] = self.rootca_dir
         if 'SSL_KEY_LENGTH' not in os.environ:
@@ -251,13 +257,13 @@ class ConfigDaemon:
             match = re.match(pattern, os.environ['ETCD_HOST'])
             if match:
                 self.log.info('ETCD_HOST env value is IP')
-                os.environ["SAN"] = "IP:" + \
-                                    os.environ["ETCD_HOST"] + "," + \
-                                    os.environ["SAN"]
+                os.environ['SAN'] = 'IP:' + \
+                                    os.environ['ETCD_HOST'] + ',' + \
+                                    os.environ['SAN']
             else:
                 self.log.info('ETCD_HOST env value is DNS')
-                os.environ["SAN"] = "DNS:" + \
-                                    os.environ["ETCD_HOST"] + "," + \
+                os.environ['SAN'] = 'DNS:' + \
+                                    os.environ["ETCD_HOST"] + ',' + \
                                     os.environ["SAN"]
         os.environ['TLS_CIPHERS'] = (
                 'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,'

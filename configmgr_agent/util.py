@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # Copyright (c) 2021 Intel Corporation.
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,16 +27,18 @@ from configmgr_agent.log import get_logger
 
 log = get_logger('util')
 
+
 # Return dict with service:cert_type
 def get_cert_type(services, config_file):
     dict_items={}
     with open(config_file) as f:
         config = json.load(f)
     for key, value in config.items():
-        service_conf = key.split("/")
-        if(service_conf[2] == 'cert_type'):
+        service_conf = key.split('/')
+        if service_conf[2] == 'cert_type':
             dict_items[service_conf[1]] = list(value)
     return dict_items
+
 
 def exec_script(script, *args):
     """Helper function to execute in the ./scripts/ directory.
@@ -55,6 +56,7 @@ def exec_script(script, *args):
                 f'{" ".join(cmd)} failed: '
                 f'{exc.output.decode("utf-8")}') from exc
 
+
 def execute_cmd(cmd):
     """Executes the shell cmd
 
@@ -67,6 +69,7 @@ def execute_cmd(cmd):
         raise RuntimeError(
                 f'{" ".join(cmd)} failed: '
                 f'{exc.output.decode("utf-8")}') from exc
+
 
 def get_server_cert_key(appname, certtype, certificates_dir_path):
     """ parse appname and certtype, returns server cert and key dict
@@ -83,12 +86,12 @@ def get_server_cert_key(appname, certtype, certificates_dir_path):
         cert_ext = '.pem'
     elif 'der' in certtype:
         cert_ext = '.der'
-    cert_file = certificates_dir_path + appname + "_Server/" + appname \
-        + "_Server_server_certificate" + cert_ext
+    cert_file = certificates_dir_path + appname + '_Server/' + appname \
+        + '_Server_server_certificate' + cert_ext
 
-    key_file = certificates_dir_path + appname + "_Server/" + appname \
-        + "_Server_server_key" + cert_ext
-    ca_certificate = certificates_dir_path + "rootca/cacert" + cert_ext
+    key_file = certificates_dir_path + appname + '_Server/' + appname \
+        + '_Server_server_key' + cert_ext
+    ca_certificate = certificates_dir_path + 'rootca/cacert' + cert_ext
 
     if cert_ext == '.pem':
         with open(cert_file, 'r') as s_cert:
@@ -100,7 +103,7 @@ def get_server_cert_key(appname, certtype, certificates_dir_path):
         with open(ca_certificate, 'r') as cert:
             ca_cert = cert.read()
             server_key_cert['ca_cert'] = ca_cert
-    if cert_ext == ".der":
+    if cert_ext == '.der':
         with open(cert_file, 'rb') as s_cert:
             server_cert = s_cert.read()
             server_key_cert['server_cert'] = \
