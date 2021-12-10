@@ -55,6 +55,7 @@ def load_data_etcd(file, apps, etcdctl_path, dev_mode):
     """
     with open(file, 'r') as f:
         config = json.load(f)
+
     log.info('=======Adding key/values to etcd========')
     for key, value in config.items():
         if key.split('/')[1] not in apps and key != '/GlobalEnv/':
@@ -73,15 +74,17 @@ def load_data_etcd(file, apps, etcdctl_path, dev_mode):
             # Adding ca cert, server key and cert to App config in PROD mode
             if not dev_mode:
                 app_type = key[len(ETCD_PREFIX):].split('/')
-                if 'pem' in app_type[2] or \
-                    'der' in app_type[2]:
-                    # Update server certs to etcd if cert_type formate is either pem or der
-                    log.debug("Update server certs to pem and der certs to etcd")
-                    server_cert_server_key = \
-                        get_server_cert_key(app_type[1],
-                                            app_type[2],
-                                            cert_dir)
-                    value.update(server_cert_server_key)
+                if app_type[2] == 'config':
+                    if 'cert_type' in value:
+                        if 'pem' in value['cert_type'] or \
+                            'der' in value['cert_type']:
+                            # Update server certs to etcd if cert_type formate is either pem or der
+                            log.debug("Update server certs to pem and der certs to etcd")
+                            server_cert_server_key = \
+                                get_server_cert_key(app_type[1],
+                                                    value['cert_type'],
+                                                    cert_dir)
+                            value.update(server_cert_server_key)
             log.info('update value for the service{}'.format(key))
             execute_cmd([etcdctl_path, 'put', key,
                          bytes(json.dumps(value,

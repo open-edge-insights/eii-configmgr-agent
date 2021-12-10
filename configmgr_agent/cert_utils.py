@@ -144,15 +144,30 @@ def generate_cert_key_pair(
             key, client_alt_name, server_alt_name, cnf_template)
 
     try:
-        openssl_req(cnf_path,
-                    '-new',
-                    '-newkey',  f'rsa:{ssl_key_length}',
-                    '-keyout',  private_key_path,
-                    '-out',     req_pem_path,
-                    '-days',    '3650',
-                    '-outform', 'PEM',
-                    '-subj',    f'/CN={key}/O={peer}/L=$$$/',
-                    '-nodes')
+        if key not in ['OpcuaExport_Server', 'opcua']:
+            openssl_req(cnf_path,
+                        '-new',
+                        '-newkey',  f'rsa:{ssl_key_length}',
+                        '-keyout',  private_key_path,
+                        '-out',     req_pem_path,
+                        '-days',    '3650',
+                        '-outform', 'PEM',
+                        '-subj',    f'/CN={key}/O={peer}/L=$$$/',
+                        '-nodes')
+        else:
+             openssl_req(cnf_path,
+                        '-new',
+                        '-newkey',  f'rsa:{ssl_key_length}',
+                        '-keyout',  private_key_path,
+                        '-out',     req_pem_path,
+                        '-days',    '3650',
+                        '-outform', 'PEM',
+                        '-subj',    f'/CN={key}/O={peer}/L=$$$/',
+                        '-nodes',
+                        '-addext', f'subjectAltName = {os.getenv("SAN")}',
+                        '-addext', 'keyUsage = Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment, Certificate Sign'
+                        )
+
         if key not in ['OpcuaExport_Server', 'opcua']:
             openssl_ca(cnf_path,
                     '-days',    '3650',

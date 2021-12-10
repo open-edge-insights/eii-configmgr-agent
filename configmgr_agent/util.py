@@ -35,8 +35,9 @@ def get_cert_type(services, config_file):
         config = json.load(f)
     for key, value in config.items():
         service_conf = key.split('/')
-        if service_conf[2] == 'cert_type':
-            dict_items[service_conf[1]] = list(value)
+        if service_conf[2] == 'config':
+            if 'cert_type' in value:
+                dict_items[service_conf[1]] = list(value['cert_type'])
     return dict_items
 
 
@@ -86,12 +87,12 @@ def get_server_cert_key(appname, certtype, certificates_dir_path):
         cert_ext = '.pem'
     elif 'der' in certtype:
         cert_ext = '.der'
-    cert_file = certificates_dir_path + appname + '_Server/' + appname \
+    cert_file = certificates_dir_path + '/' + appname + '_Server/' + appname \
         + '_Server_server_certificate' + cert_ext
 
-    key_file = certificates_dir_path + appname + '_Server/' + appname \
+    key_file = certificates_dir_path + '/' + appname + '_Server/' + appname \
         + '_Server_server_key' + cert_ext
-    ca_certificate = certificates_dir_path + 'rootca/cacert' + cert_ext
+    ca_certificate = certificates_dir_path + '/' + 'rootca/cacert' + cert_ext
 
     if cert_ext == '.pem':
         with open(cert_file, 'r') as s_cert:

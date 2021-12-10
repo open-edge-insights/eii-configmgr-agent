@@ -54,5 +54,6 @@ COPY scripts/ ./scripts/
 COPY configmgr_agent/ ./configmgr_agent/
 COPY agent.py .
 COPY entrypoint.sh ./entrypoint.sh
-RUN chown -R $EIIUSER:$EIIUSER /EII/etcd
+RUN chown -R ${EII_UID}:${EII_UID} /EII/Certificates
+RUN chown -R ${EII_UID}:${EII_UID} /EII/etcd
 ENTRYPOINT ["./entrypoint.sh", "python3 agent.py -d /EII/Certificates -l DEBUG -c /EII/etcd/config/eii_config.json"]
