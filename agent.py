@@ -78,7 +78,9 @@ def load_data_etcd(file, apps, etcdctl_path, dev_mode):
                     if 'cert_type' in value:
                         if 'pem' in value['cert_type'] or \
                             'der' in value['cert_type']:
+
                             # Update server certs to etcd if cert_type format is either pem or der
+
                             log.debug("Update server certs to pem and der certs to etcd")
                             server_cert_server_key = \
                                 get_server_cert_key(app_type[1],
