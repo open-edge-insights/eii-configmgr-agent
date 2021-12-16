@@ -59,8 +59,12 @@ services:
       NO_PROXY: $eii_no_proxy,0.0.0.0:$ETCD_CLIENT_PORT,0.0.0.0:$ETCD_PEER_PORT
     networks:
       - eii
+    ports:
+      - $ETCD_CLIENT_PORT:$ETCD_CLIENT_PORT
+      - $ETCD_PEER_PORT:$ETCD_PEER_PORT
     ipc: "none"
     volumes:
       - ./Certificates:/EII/Certificates:rw
       - ./Certificates/root:/EII/Certificates/root
       - ./Certificates/rootca:/EII/Certificates/rootca
+      - ./eii_config.json:/EII/etcd/config/eii_config.json
