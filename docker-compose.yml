@@ -34,7 +34,7 @@ services:
         UBUNTU_IMAGE_VERSION: ${UBUNTU_IMAGE_VERSION}
         PYTHON_VERSION: ${PYTHON_VERSION}
     read_only: false
-    image: ia_configmgr_agent:${EII_VERSION}
+    image: ${DOCKER_REGISTRY}ia_configmgr_agent:${EII_VERSION}
     security_opt:
       - no-new-privileges
     restart: unless-stopped
