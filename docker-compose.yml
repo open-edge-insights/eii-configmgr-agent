@@ -45,6 +45,7 @@ services:
       HOST_IP: $HOST_IP
       HOST_TIME_ZONE: $HOST_TIME_ZONE
       ETCDCTL_API: 3
+      SOCKET_DIR: $SOCKET_DIR
       DEV_MODE: $DEV_MODE
       ETCD_HOST: $ETCD_HOST
       ETCD_DATA_DIR: $ETCD_DATA_DIR
@@ -68,3 +69,4 @@ services:
       - ./Certificates/root:/EII/Certificates/root
       - ./Certificates/rootca:/EII/Certificates/rootca
       - ./eii_config.json:/EII/etcd/config/eii_config.json
+      - $EII_INSTALL_PATH/sockets:$SOCKET_DIR
