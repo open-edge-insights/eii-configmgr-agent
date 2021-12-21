@@ -28,6 +28,7 @@ import re
 from configmgr_agent.log import get_logger
 from configmgr_agent.cert_utils import generate_rootca, generate_cert_key_pair
 from configmgr_agent.util import get_cert_type, exec_script
+from distutils.util import strtobool
 
 
 def assert_env_var(var):
@@ -58,7 +59,8 @@ class ConfigDaemon:
             for service in self.services:
                 service_cert_dir =  os.path.join(certs_dir, service)
                 self.log.info(f'Creating certs directory for service: "{service_cert_dir}"')
-                os.makedirs(service_cert_dir, exist_ok=True)
+                if os.getenv("Provision_Mode","") != "k8s":
+                    os.makedirs(service_cert_dir, exist_ok=True)
 
             self.rootca_dir = os.path.join(certs_dir, 'rootca')
             self.rootca_certs_path = os.path.join(self.rootca_dir, 'certs')
@@ -67,17 +69,17 @@ class ConfigDaemon:
             self.rootca_cert_der_path = os.path.join(self.rootca_dir, 'cacert.der')
 
             # Perform the inital setup
-            self._setup_dirs()
-            self._setup_openssl_env()
-
-            self.log.info('Generating rootca')
-            generate_rootca(
-                    'rootca',
-                    self.rootca_key_path,
-                    self.rootca_cert_path,
-                    self.rootca_cert_der_path,
-                    client_alt_name='rootca',
-                    server_alt_name='rootca')
+            if os.getenv("Provision_Mode","") != "k8s":
+                self._setup_dirs()
+                self._setup_openssl_env()
+                self.log.info('Generating rootca')
+                generate_rootca(
+                        'rootca',
+                        self.rootca_key_path,
+                        self.rootca_cert_path,
+                        self.rootca_cert_der_path,
+                        client_alt_name='rootca',
+                        server_alt_name='rootca')
 
             with open('config/x509_cert_config.json') as f:
                 self.opts = json.load(f)
@@ -106,7 +108,10 @@ class ConfigDaemon:
 
             # Generate certificates for all services
             self.log.info('Generating service certificates')
-            self._generate_certs()
+            if os.getenv("Provision_Mode","") != "k8s":
+                self._generate_certs()
+        if bool(strtobool(os.getenv('GENCERT', 'false'))):
+            os._exit(0)
 
         # Provision initial ETCD settings
         self._setup_etcd_env()
@@ -240,7 +245,7 @@ class ConfigDaemon:
         if 'SSL_KEY_LENGTH' not in os.environ:
             os.environ['SSL_KEY_LENGTH'] = '3072'
 
-        os.environ['SAN'] = ('IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*,DNS:localhost,'
+        os.environ['SAN'] = ('IP:127.0.0.1,DNS:ia_configmgr_agent,DNS:configagent,DNS:*,DNS:localhost,'
                              'URI:urn:unconfigured:application')
         if 'SSL_SAN_IP' not in os.environ:
             os.environ['SSL_SAN_IP'] = ''

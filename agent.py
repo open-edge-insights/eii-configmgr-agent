@@ -230,41 +230,42 @@ if __name__ == "__main__":
 
     # start thread
     daemon_thread.start()
-    if not os.environ['ETCD_HOST']:
-        os.environ['ETCD_HOST'] = 'localhost'
-    if not os.environ['ETCD_CLIENT_PORT']:
-        os.environ['ETCD_CLIENT_PORT'] = '2379'
+    if not bool(strtobool(os.getenv('GENCERT', 'false'))):
+        if not os.environ['ETCD_HOST']:
+            os.environ['ETCD_HOST'] = 'localhost'
+        if not os.environ['ETCD_CLIENT_PORT']:
+            os.environ['ETCD_CLIENT_PORT'] = '2379'
 
-    os.environ['ETCDCTL_ENDPOINTS'] = os.getenv('ETCD_HOST') \
-        + ':' + os.getenv('ETCD_CLIENT_PORT')
-    port_up = check_port_availability(os.environ['ETCD_HOST'], os.environ['ETCD_CLIENT_PORT'])
+        os.environ['ETCDCTL_ENDPOINTS'] = os.getenv('ETCD_HOST') \
+            + ':' + os.getenv('ETCD_CLIENT_PORT')
+        port_up = check_port_availability(os.environ['ETCD_HOST'], os.environ['ETCD_CLIENT_PORT'])
 
-    if not port_up:
-        log.exception(f'Etcd port {os.environ["ETCD_CLIENT_PORT"]} is not up on {os.environ["ETCD_HOST"]}')
-        sys.exit(1)
-    else:
-        log.info(f"Etcd port {os.environ['ETCD_CLIENT_PORT']} is up on {os.environ['ETCD_HOST']}")
+        if not port_up:
+            log.exception(f'Etcd port {os.environ["ETCD_CLIENT_PORT"]} is not up on {os.environ["ETCD_HOST"]}')
+            sys.exit(1)
+        else:
+            log.info(f"Etcd port {os.environ['ETCD_CLIENT_PORT']} is up on {os.environ['ETCD_HOST']}")
 
-    if not dev_mode:
-        os.environ['ETCD_CERT_FILE'] = os.path.join(cert_dir, "etcdserver/etcdserver_server_certificate.pem")
-        os.environ['ETCD_KEY_FILE'] = os.path.join(cert_dir, "etcdserver/etcdserver_server_key.pem")
-        os.environ['ETCD_TRUSTED_CA_FILE'] = os.path.join(cert_dir, "rootca/cacert.pem")
-        os.environ['ETCDCTL_CACERT'] = os.path.join(cert_dir, "rootca/cacert.pem")
-        os.environ['ETCDCTL_CERT'] = os.path.join(cert_dir, "root/root_client_certificate.pem")
-        os.environ['ETCDCTL_KEY'] = os.path.join(cert_dir, "root/root_client_key.pem")
-    etcd_health_check()
+        if not dev_mode:
+            os.environ['ETCD_CERT_FILE'] = os.path.join(cert_dir, "etcdserver/etcdserver_server_certificate.pem")
+            os.environ['ETCD_KEY_FILE'] = os.path.join(cert_dir, "etcdserver/etcdserver_server_key.pem")
+            os.environ['ETCD_TRUSTED_CA_FILE'] = os.path.join(cert_dir, "rootca/cacert.pem")
+            os.environ['ETCDCTL_CACERT'] = os.path.join(cert_dir, "rootca/cacert.pem")
+            os.environ['ETCDCTL_CERT'] = os.path.join(cert_dir, "root/root_client_certificate.pem")
+            os.environ['ETCDCTL_KEY'] = os.path.join(cert_dir, "root/root_client_key.pem")
+        etcd_health_check()
 
-    app_cert_type = get_cert_type(services, config_file)
-    load_data_etcd(config_file, services, "./etcdctl", dev_mode)
+        app_cert_type = get_cert_type(services, config_file)
+        load_data_etcd(config_file, services, "./etcdctl", dev_mode)
 
-    for key, value in app_cert_type.items():
-        try:
-            if not dev_mode:
-                if 'zmq' in value:
-                    log.info('Put zmq keys to ETCD')
-                    put_zmqkeys(key)
-                create_etcd_users(key)
-        except ValueError:
-            log.debug(f'Put zmq keys failder for key: {key}')
-    if not dev_mode:
-        enable_etcd_auth()
+        for key, value in app_cert_type.items():
+            try:
+                if not dev_mode:
+                    if 'zmq' in value:
+                        log.info('Put zmq keys to ETCD')
+                        put_zmqkeys(key)
+                    create_etcd_users(key)
+            except ValueError:
+                log.debug(f'Put zmq keys failder for key: {key}')
+        if not dev_mode:
+            enable_etcd_auth()
