@@ -55,7 +55,7 @@ class ConfigDaemon:
         self.config_file = config_file
         if not dev_mode:
             self.opts = {}
-        
+
             for service in self.services:
                 service_cert_dir =  os.path.join(certs_dir, service)
                 self.log.info(f'Creating certs directory for service: "{service_cert_dir}"')

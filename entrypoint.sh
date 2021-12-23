@@ -21,5 +21,14 @@
 # SOFTWARE.
 
 chown -R $EIIUSER:$EIIUSER /EII/Certificates
+chown -R $EIIUSER:$EIIUSER /app/models/
+chown -R $EIIUSER:$EIIUSER /data
+chown -R $EIIUSER:$EIIUSER $SOCKET_DIR
+chown -R $EIIUSER:$EIIUSER $EII_INSTALL_PATH
+chown -R $EIIUSER:$EIIUSER $TC_DISPATCHER_PATH
 chmod -R 760 /EII/Certificates
+chmod -R 760 /data
+chmod -R 760 /app/models/
+chmod -R 760 $SOCKET_DIR
+chmod -R 760 $TC_DISPATCHER_PATH
 exec runuser -u $EIIUSER -- $@
