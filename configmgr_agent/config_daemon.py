@@ -245,7 +245,7 @@ class ConfigDaemon:
         if 'SSL_KEY_LENGTH' not in os.environ:
             os.environ['SSL_KEY_LENGTH'] = '3072'
 
-        os.environ['SAN'] = ('IP:127.0.0.1,DNS:ia_configmgr_agent,DNS:configagent,DNS:*,DNS:localhost,'
+        os.environ['SAN'] = ('IP:127.0.0.1,DNS:ia_configmgr_agent,DNS:configmgragent,DNS:*,DNS:localhost,'
                              'URI:urn:unconfigured:application')
         if 'SSL_SAN_IP' not in os.environ:
             os.environ['SSL_SAN_IP'] = ''
