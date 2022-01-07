@@ -23,16 +23,12 @@ import json
 import base64
 import subprocess as sp
 
-from configmgr_agent.log import get_logger
-
-log = get_logger('util')
-
 
 # Return dict with service:cert_type
-def get_cert_type(services, config_file):
-    dict_items={}
-    with open(config_file) as f:
-        config = json.load(f)
+def get_cert_type(config_file):
+    dict_items = {}
+    with open(config_file) as conf_file:
+        config = json.load(conf_file)
     for key, value in config.items():
         service_conf = key.split('/')
         if service_conf[2] == 'config':
@@ -54,8 +50,8 @@ def exec_script(script, *args):
         sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as exc:
         raise RuntimeError(
-                f'{" ".join(cmd)} failed: '
-                f'{exc.output.decode("utf-8")}') from exc
+            f'{" ".join(cmd)} failed: '
+            f'{exc.output.decode("utf-8")}') from exc
 
 
 def execute_cmd(cmd):
@@ -68,8 +64,8 @@ def execute_cmd(cmd):
         sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as exc:
         raise RuntimeError(
-                f'{" ".join(cmd)} failed: '
-                f'{exc.output.decode("utf-8")}') from exc
+            f'{" ".join(cmd)} failed: '
+            f'{exc.output.decode("utf-8")}') from exc
 
 
 def get_server_cert_key(appname, certtype, certificates_dir_path):

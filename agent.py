@@ -20,7 +20,8 @@
 # SOFTWARE.
 
 """
-Entrypoint for ConfigMgrAgent to start it's daemon thread to bring up etcd and update etcd keys/values
+Entrypoint for ConfigMgrAgent to start it's daemon
+thread to bring up etcd and update etcd keys/values
 """
 import os
 import sys
@@ -29,11 +30,10 @@ import signal
 import argparse
 import socket
 import json
-import zmq
-import zmq.auth
-import sys
 from threading import Thread
 from distutils.util import strtobool
+import zmq
+import zmq.auth
 
 from configmgr_agent.log import *
 from configmgr_agent.config_daemon import ConfigDaemon
@@ -41,9 +41,9 @@ from configmgr_agent.util import get_cert_type, get_server_cert_key, exec_script
 
 
 # Globals
-stop = False
+STOP = False
 ETCD_PREFIX = os.environ['ETCD_PREFIX']
-log = get_logger(__name__)
+LOG = get_logger(__name__)
 
 
 def load_data_etcd(file, apps, etcdctl_path, dev_mode):
@@ -53,23 +53,23 @@ def load_data_etcd(file, apps, etcdctl_path, dev_mode):
     :param apps: dict for AppName:CertType
     :type apps: dict
     """
-    with open(file, 'r') as f:
-        config = json.load(f)
+    with open(file, 'r') as conf_file:
+        config = json.load(conf_file)
 
-    log.info('=======Adding key/values to etcd========')
+    LOG.info('=======Adding key/values to etcd========')
     for key, value in config.items():
         if key.split('/')[1] not in apps and key != '/GlobalEnv/':
             continue
         key = ETCD_PREFIX + key
         if isinstance(value, str):
             execute_cmd([etcdctl_path, 'put', key,
-                        bytes(value.encode())])
+                         bytes(value.encode())])
         elif isinstance(value, dict) and key == '/GlobalEnv/':
             # Adding DEV_MODE from env
             value['DEV_MODE'] = os.environ['DEV_MODE']
             execute_cmd([etcdctl_path, 'put', key,
                          bytes(json.dumps(value,
-                         indent=4).encode())])
+                                          indent=4).encode())])
         elif isinstance(value, dict):
             # Adding ca cert, server key and cert to App config in PROD mode
             if not dev_mode:
@@ -81,19 +81,19 @@ def load_data_etcd(file, apps, etcdctl_path, dev_mode):
 
                             # Update server certs to etcd if cert_type format is either pem or der
 
-                            log.debug("Update server certs to pem and der certs to etcd")
+                            LOG.debug("Update server certs to pem and der certs to etcd")
                             server_cert_server_key = \
                                 get_server_cert_key(app_type[1],
                                                     value['cert_type'],
-                                                    cert_dir)
+                                                    CERT_DIR)
                             value.update(server_cert_server_key)
-            log.info('update value for the service{}'.format(key))
+            LOG.info('update value for the service{}'.format(key))
             execute_cmd([etcdctl_path, 'put', key,
                          bytes(json.dumps(value,
-                         indent=4).encode())])
-        log.info('Added {} key successfully'.format(key))
+                                          indent=4).encode())])
+        LOG.info('Added {} key successfully'.format(key))
 
-    log.info("=======Reading key/values from etcd========")
+    LOG.info("=======Reading key/values from etcd========")
     for key in config.keys():
         if key.split("/")[1] not in apps and key != '/GlobalEnv/':
             continue
@@ -112,23 +112,23 @@ def put_zmqkeys(appname):
     str_public_key = public_key.decode()
     str_secret_key = secret_key.decode()
     while str_public_key[0] == '-' or str_secret_key[0] == '-':
-        log.info('Generating ZMQ keys')
+        LOG.info('Generating ZMQ keys')
         public_key, secret_key = zmq.curve_keypair()
         str_public_key = public_key.decode()
         str_secret_key = secret_key.decode()
     execute_cmd(['./etcdctl', 'put',
-                ETCD_PREFIX + '/Publickeys/' + appname,
-                public_key])
+                 ETCD_PREFIX + '/Publickeys/' + appname,
+                 public_key])
     execute_cmd(['./etcdctl', 'put',
-                  ETCD_PREFIX + '/' + appname +
-                  "/private_key", secret_key])
+                 ETCD_PREFIX + '/' + appname +
+                 "/private_key", secret_key])
 
 
 def enable_etcd_auth():
     """Enable Auth for etcd and Create root user with root role
     """
     password = os.environ['ETCD_ROOT_PASSWORD']
-    log.info('Enable etcd auth')
+    LOG.info('Enable etcd auth')
     exec_script("etcd_enable_auth.sh", password)
 
 
@@ -139,97 +139,97 @@ def create_etcd_users(appname):
     :param appname: App Name
     :type appname: String
     """
-    log.debug('Creating etcd users')
+    LOG.debug('Creating etcd users')
     exec_script("etcd_create_user.sh", appname)
 
 
 def etcd_health_check():
     """Execute ETCD health check script.
     """
-    log.info('Executing health check on ETCD service')
+    LOG.info('Executing health check on ETCD service')
     exec_script('etcd_health_check.sh')
 
 
 def clear_etcd_kv():
     execute_cmd(["./etcdctl", "del", "--prefix",
-                    ETCD_PREFIX + "/"])
+                 ETCD_PREFIX + "/"])
 
 
 def check_port_availability(hostname, port):
-        """Verifies port availability on hostname for accepting connection
+    """Verifies port availability on hostname for accepting connection
 
-        :param hostname: hostname of the machine
-        :type hostname: str
-        :param port: port
-        :type port: str
-        :return: portUp (whether port is up or not)
-        :rtype: Boolean
-        """
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        log.debug("Attempting to connect to {}:{}".format(hostname, port))
-        numRetries = 1000
-        retryCount = 0
-        portUp = False
-        while(retryCount < numRetries):
-            if(sock.connect_ex((hostname, int(port)))):
-                log.debug("{} port is up on {}".format(port, hostname))
-                portUp = True
-                break
-            retryCount += 1
-            time.sleep(0.1)
-        return portUp
+    :param hostname: hostname of the machine
+    :type hostname: str
+    :param port: port
+    :type port: str
+    :return: port_up (whether port is up or not)
+    :rtype: Boolean
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    LOG.debug("Attempting to connect to {}:{}".format(hostname, port))
+    num_retries = 1000
+    retry_count = 0
+    port_up = False
+    while retry_count < num_retries:
+        if sock.connect_ex((hostname, int(port))):
+            LOG.debug("{} port is up on {}".format(port, hostname))
+            port_up = True
+            break
+        retry_count += 1
+        time.sleep(0.1)
+    return port_up
 
 
 def signal_handler(sig, frame):
     """SIGTERM signal handler.
     """
-    stop = True
+    STOP = True
 
 
 def config_daemon():
     try:
-        daemon = ConfigDaemon(args.certs_dir, services, dev_mode, config_file)
-        log.info('Etcd is Running...')
-    except Exception as e:
-        log.exception(f'Error running config daemon: {e}')
+        daemon = ConfigDaemon(ARGS.certs_dir, SERVICES, DEV_MODE, CONFIG_FILE)
+        LOG.info('Etcd is Running...')
+    except Exception as execption:
+        LOG.exception('Error running config daemon: {}'.format(exception))
 
 
 if __name__ == "__main__":
     # Parse command line arguments
-    dev_mode = bool(strtobool(os.environ['DEV_MODE']))
-    ap = argparse.ArgumentParser()
-    ap.add_argument('-d', '--dir', dest='certs_dir', default='Certificates',
+    DEV_MODE = bool(strtobool(os.environ['DEV_MODE']))
+    AP = argparse.ArgumentParser()
+    AP.add_argument('-d', '--dir', dest='certs_dir', default='Certificates',
                     help='Output directory for certificates')
-    ap.add_argument('-s', '--services', dest='services', default=None,
-            nargs='+', help='Services to generate and inject keys into')
-    ap.add_argument('-l', '--log-level', dest='log_level',
+    AP.add_argument('-s', '--services', dest='services', default=None,
+                    nargs='+', help='Services to generate and inject keys into')
+    AP.add_argument('-l', '--log-level', dest='log_level',
                     choices=LOG_LEVEL.keys(), default='INFO', help='Log level')
-    ap.add_argument('-c', '--conifg', dest='config', default='config/eii_config.json',
+    AP.add_argument('-c', '--conifg', dest='config', default='config/eii_config.json',
                     help='Output directory for certificates')
-    args = ap.parse_args()
+    ARGS = AP.parse_args()
 
-    services = args.services
-    config_file = args.config
-    cert_dir = args.certs_dir
+    SERVICES = ARGS.services
+    CONFIG_FILE = ARGS.config
+    CERT_DIR = ARGS.certs_dir
 
-    if services is None:
+    if SERVICES is None:
         if 'SERVICES' in os.environ:
-            services = list(filter(
+            SERVICES = list(filter(
                 lambda s: s != '',
                 map(lambda s: s.strip(), os.environ['SERVICES'].split(','))))
         else:
             raise RuntimeError('No specified services')
 
     # Configure logging
-    configure_logging(args.log_level)
+    configure_logging(ARGS.log_level)
 
     # Setup SIGTERM signal hadnler
     signal.signal(signal.SIGTERM, signal_handler)
 
-    daemon_thread = Thread(target = config_daemon)
+    DAEMON_THREAD = Thread(target=config_daemon)
 
     # start thread
-    daemon_thread.start()
+    DAEMON_THREAD.start()
     if not bool(strtobool(os.getenv('GENCERT', 'false'))):
         if not os.environ['ETCD_HOST']:
             os.environ['ETCD_HOST'] = 'localhost'
@@ -238,34 +238,38 @@ if __name__ == "__main__":
 
         os.environ['ETCDCTL_ENDPOINTS'] = os.getenv('ETCD_HOST') \
             + ':' + os.getenv('ETCD_CLIENT_PORT')
-        port_up = check_port_availability(os.environ['ETCD_HOST'], os.environ['ETCD_CLIENT_PORT'])
+        PORT_UP = check_port_availability(os.environ['ETCD_HOST'], os.environ['ETCD_CLIENT_PORT'])
 
-        if not port_up:
-            log.exception(f'Etcd port {os.environ["ETCD_CLIENT_PORT"]} is not up on {os.environ["ETCD_HOST"]}')
+        if not PORT_UP:
+            LOG.exception('Etcd port {} is not up on {}' \
+                    .format(os.environ["ETCD_CLIENT_PORT"], os.environ["ETCD_HOST"]))
             sys.exit(1)
         else:
-            log.info(f"Etcd port {os.environ['ETCD_CLIENT_PORT']} is up on {os.environ['ETCD_HOST']}")
+            LOG.info('Etcd port {} is up on {}' \
+                    .format(os.environ['ETCD_CLIENT_PORT'], os.environ['ETCD_HOST']))
 
-        if not dev_mode:
-            os.environ['ETCD_CERT_FILE'] = os.path.join(cert_dir, "etcdserver/etcdserver_server_certificate.pem")
-            os.environ['ETCD_KEY_FILE'] = os.path.join(cert_dir, "etcdserver/etcdserver_server_key.pem")
-            os.environ['ETCD_TRUSTED_CA_FILE'] = os.path.join(cert_dir, "rootca/cacert.pem")
-            os.environ['ETCDCTL_CACERT'] = os.path.join(cert_dir, "rootca/cacert.pem")
-            os.environ['ETCDCTL_CERT'] = os.path.join(cert_dir, "root/root_client_certificate.pem")
-            os.environ['ETCDCTL_KEY'] = os.path.join(cert_dir, "root/root_client_key.pem")
+        if not DEV_MODE:
+            os.environ['ETCD_CERT_FILE'] = os.path.join(CERT_DIR, \
+                    "etcdserver/etcdserver_server_certificate.pem")
+            os.environ['ETCD_KEY_FILE'] = os.path.join(CERT_DIR, \
+                    "etcdserver/etcdserver_server_key.pem")
+            os.environ['ETCD_TRUSTED_CA_FILE'] = os.path.join(CERT_DIR, "rootca/cacert.pem")
+            os.environ['ETCDCTL_CACERT'] = os.path.join(CERT_DIR, "rootca/cacert.pem")
+            os.environ['ETCDCTL_CERT'] = os.path.join(CERT_DIR, "root/root_client_certificate.pem")
+            os.environ['ETCDCTL_KEY'] = os.path.join(CERT_DIR, "root/root_client_key.pem")
         etcd_health_check()
 
-        app_cert_type = get_cert_type(services, config_file)
-        load_data_etcd(config_file, services, "./etcdctl", dev_mode)
+        APP_CERT_TYPE = get_cert_type(CONFIG_FILE)
+        load_data_etcd(CONFIG_FILE, SERVICES, "./etcdctl", DEV_MODE)
 
-        for key, value in app_cert_type.items():
+        for key, value in APP_CERT_TYPE.items():
             try:
-                if not dev_mode:
+                if not DEV_MODE:
                     if 'zmq' in value:
-                        log.info('Put zmq keys to ETCD')
+                        LOG.info('Put zmq keys to ETCD')
                         put_zmqkeys(key)
                     create_etcd_users(key)
             except ValueError:
-                log.debug(f'Put zmq keys failder for key: {key}')
-        if not dev_mode:
+                LOG.debug('Put zmq keys failder for key: {}'.format(key))
+        if not DEV_MODE:
             enable_etcd_auth()

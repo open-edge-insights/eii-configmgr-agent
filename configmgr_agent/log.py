@@ -20,7 +20,6 @@
 
 """Logging utilities
 """
-import sys
 import logging
 import coloredlogs
 
@@ -67,7 +66,7 @@ def get_logger(name):
     logger = logging.getLogger(name)
     logger.setLevel(GLOBAL_LOG_LEVEL)
     coloredlogs.install(
-            fmt=fmt_str,
-            level=GLOBAL_LOG_LEVEL_STR,
-            logger=logger)
+        fmt=fmt_str,
+        level=GLOBAL_LOG_LEVEL_STR,
+        logger=logger)
     return logger

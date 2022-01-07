@@ -74,7 +74,7 @@ def openssl_req(cnf_fn, *args, **kwargs):
         sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as exc:
         raise RuntimeError(
-                f'openssl req failed:\n{exc.output.decode("utf-8")}') from exc
+            f'openssl req failed:\n{exc.output.decode("utf-8")}') from exc
 
 
 def openssl_x509(*args, **kwargs):
@@ -85,7 +85,7 @@ def openssl_x509(*args, **kwargs):
         sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as exc:
         raise RuntimeError(
-                f'openssl x509 failed:\n{exc.output.decode("utf-8")}') from exc
+            f'openssl x509 failed:\n{exc.output.decode("utf-8")}') from exc
 
 
 def openssl_ca(cnf_path, *args, **kwargs):
@@ -96,7 +96,7 @@ def openssl_ca(cnf_path, *args, **kwargs):
         sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as exc:
         raise RuntimeError(
-                f'openssl ca failed:\n{exc.output.decode("utf-8")}') from exc
+            f'openssl ca failed:\n{exc.output.decode("utf-8")}') from exc
 
 
 def openssl_rsa(*args, **kwargs):
@@ -105,7 +105,7 @@ def openssl_rsa(*args, **kwargs):
         sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as exc:
         raise RuntimeError(
-                f'openssl RSA failed:\n{exc.output.decode("utf-8")}') from exc
+            f'openssl RSA failed:\n{exc.output.decode("utf-8")}') from exc
 
 
 def generate_rootca(
@@ -115,19 +115,19 @@ def generate_rootca(
     """Generate the rootca certificate.
     """
     cnf_path = generate_openssl_cnf(
-            common_name, client_alt_name, server_alt_name, cnf_template)
+        common_name, client_alt_name, server_alt_name, cnf_template)
     try:
         openssl_req(cnf_path,
                     '-x509',
-                    '-days',    '3650',
-                    '-newkey',  f'rsa:{ssl_key_length}',
-                    '-keyout',  key_path,
-                    '-out',     cert_path,
+                    '-days', '3650',
+                    '-newkey', f'rsa:{ssl_key_length}',
+                    '-keyout', key_path,
+                    '-out', cert_path,
                     '-outform', 'PEM',
-                    '-subj',    '/CN=EIICertToolSelfSignedtRootCA/L=$$$$/',
+                    '-subj', '/CN=EIICertToolSelfSignedtRootCA/L=$$$$/',
                     '-nodes')
-        openssl_x509('-in',      cert_path,
-                     '-out',     cert_cer_path,
+        openssl_x509('-in', cert_path,
+                     '-out', cert_cer_path,
                      '-outform', 'DER')
     finally:
         # Delete the CNF file
@@ -141,58 +141,59 @@ def generate_cert_key_pair(
     """Generate certificate and key pair.
     """
     cnf_path = generate_openssl_cnf(
-            key, client_alt_name, server_alt_name, cnf_template)
+        key, client_alt_name, server_alt_name, cnf_template)
 
     try:
         if key not in ['OpcuaExport_Server', 'opcua']:
             openssl_req(cnf_path,
                         '-new',
-                        '-newkey',  f'rsa:{ssl_key_length}',
-                        '-keyout',  private_key_path,
-                        '-out',     req_pem_path,
-                        '-days',    '3650',
+                        '-newkey', f'rsa:{ssl_key_length}',
+                        '-keyout', private_key_path,
+                        '-out', req_pem_path,
+                        '-days', '3650',
                         '-outform', 'PEM',
-                        '-subj',    f'/CN={key}/O={peer}/L=$$$/',
+                        '-subj', f'/CN={key}/O={peer}/L=$$$/',
                         '-nodes')
         else:
-             openssl_req(cnf_path,
+            openssl_req(cnf_path,
                         '-new',
-                        '-newkey',  f'rsa:{ssl_key_length}',
-                        '-keyout',  private_key_path,
-                        '-out',     req_pem_path,
-                        '-days',    '3650',
+                        '-newkey', f'rsa:{ssl_key_length}',
+                        '-keyout', private_key_path,
+                        '-out', req_pem_path,
+                        '-days', '3650',
                         '-outform', 'PEM',
-                        '-subj',    f'/CN={key}/O={peer}/L=$$$/',
+                        '-subj', f'/CN={key}/O={peer}/L=$$$/',
                         '-nodes',
                         '-addext', f'subjectAltName = {os.getenv("SAN")}',
-                        '-addext', 'keyUsage = Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment, Certificate Sign'
+                        '-addext', 'keyUsage = Digital Signature, Non Repudiation, \
+                        Key Encipherment, Data Encipherment, Certificate Sign'
                         )
 
         if key not in ['OpcuaExport_Server', 'opcua']:
             openssl_ca(cnf_path,
-                    '-days',    '3650',
-                    '-cert',    pa_cert_path,
-                    '-keyfile', pa_key_path,
-                    '-in',      req_pem_path,
-                    '-out',     cert_path,
-                    '-outdir',  pa_certs_path,
-                    '-notext',
-                    '-batch',
-                    '-extensions', f'{peer}_extensions')
+                       '-days', '3650',
+                       '-cert', pa_cert_path,
+                       '-keyfile', pa_key_path,
+                       '-in', req_pem_path,
+                       '-out', cert_path,
+                       '-outdir', pa_certs_path,
+                       '-notext',
+                       '-batch',
+                       '-extensions', f'{peer}_extensions')
         if 'output_format' in opts and opts['output_format'] == 'DER':
             if key not in ['OpcuaExport_Server', 'opcua']:
-                openssl_x509('-in',      cert_path,
-                            '-out',     f'{base_dir}_{peer}_certificate.der',
-                            '-outform', 'DER')
-                openssl_rsa('-in',  private_key_path,
+                openssl_x509('-in', cert_path,
+                             '-out', f'{base_dir}_{peer}_certificate.der',
+                             '-outform', 'DER')
+                openssl_rsa('-in', private_key_path,
                             '-out', f'{base_dir}_{peer}_key.der',
                             '-inform', 'PEM',
                             '-outform', 'DER')
             else:
-                openssl_x509('-in',      req_pem_path,
-                            '-out',     f'{base_dir}_{peer}_certificate.der',
-                            '-outform', 'DER')
-                openssl_rsa('-in',  private_key_path,
+                openssl_x509('-in', req_pem_path,
+                             '-out', f'{base_dir}_{peer}_certificate.der',
+                             '-outform', 'DER')
+                openssl_rsa('-in', private_key_path,
                             '-out', f'{base_dir}_{peer}_key.der',
                             '-inform', 'PEM',
                             '-outform', 'DER')
