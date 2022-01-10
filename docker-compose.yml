@@ -37,6 +37,9 @@ services:
     image: ${DOCKER_REGISTRY}ia_configmgr_agent:${EII_VERSION}
     security_opt:
       - no-new-privileges
+    healthcheck:
+      test: ["CMD-SHELL", "exit", "0"]
+      interval: 5m
     restart: unless-stopped
     container_name: ia_configmgr_agent
     environment:
@@ -54,8 +57,6 @@ services:
       ETCD_CLIENT_PORT: $ETCD_CLIENT_PORT
       ETCD_PEER_PORT: $ETCD_PEER_PORT
       ETCD_NAME: $ETCD_NAME
-      ETCD_INITIAL_CLUSTER_STATE: $ETCD_INITIAL_CLUSTER_STATE
-      ETCD_INITIAL_CLUSTER: $ETCD_INITIAL_CLUSTER
       ETCD_ROOT_PASSWORD: eii123
       ETCD_PREFIX: $ETCD_PREFIX
       no_proxy: $eii_no_proxy,0.0.0.0:$ETCD_CLIENT_PORT,0.0.0.0:$ETCD_PEER_PORT
