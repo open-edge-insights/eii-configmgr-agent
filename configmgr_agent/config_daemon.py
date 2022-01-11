@@ -123,7 +123,7 @@ class ConfigDaemon:
         for cert in self.opts['certs']:
             for service, cert_opts in cert.items():
                 if 'server_alt_name' in cert_opts:
-                    if service == 'OpcuaExport':
+                    if service == 'OpcuaExport_Server':
                         os.environ['SAN'] = \
                             'IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*,' + \
                             'DNS:localhost,URI:urn:open62541.server.application'
