@@ -1,18 +1,21 @@
-ConfigManagerAgent
-=============================
+Config Manager Agent
+====================
 
 
-ConfigMgrAgent is a EII service responsible for below:
-- Generates the required config manager data store keys/certificates to interact with 
-  EII config manager data store like etcd and puts in the volume mounts to be shared with
-  other EII services in PROD mode
-- Generates the required messagebus keys required for communication in PROD mode
+Config Manager Agent is a EII service responsible for below:
 - Puts the EII services configs to EII config manager data store
+- Additionally in PROD mode, generates
+  - Required config manager data store keys/certificates to interact with 
+  EII config manager data store like etcd and puts in the volume mounts to be shared with
+  other EII services
+  - Required messagebus keys for EII services communication
+- Creates required provisioning folders with the right permissions needed for other 
+  EII services via volume mounts
 
 The diagram below shows a high level flow of `ConfigMgrAgent` service .
 
 ```mermaid
-%% name: eii_proposed_provisioning_process
+%% name: EII Provisioning
 
 sequenceDiagram
     participant User
