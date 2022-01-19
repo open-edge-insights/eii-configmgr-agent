@@ -165,7 +165,7 @@ class ConfigDaemon:
             server_key = f'{base_name}_server_key.pem'
             server_cert = f'{base_name}_server_certificate.pem'
             generate_cert_key_pair(
-                key=f'{service}_Server',
+                key=service,
                 peer='server',
                 opts=opts,
                 base_dir=base_name,
@@ -182,7 +182,7 @@ class ConfigDaemon:
             client_cert = f'{base_name}_client_certificate.pem'
             # Generate client key
             generate_cert_key_pair(
-                key=f'{service}_Client',
+                key=service,
                 peer='client',
                 opts=opts,
                 base_dir=base_name,
