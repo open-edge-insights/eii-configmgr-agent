@@ -309,7 +309,7 @@ class ConfigDaemon:
             os.environ['ETCD_ADVERTISE_CLIENT_URLS'] = \
                 f'https://0.0.0.0:{etcd_client_port}'
 
-            assert_env_var('ETCD_ROOT_PASSWORD')
+            assert_env_var('ETCDROOT_PASSWORD')
             os.environ['ETCD_CERT_FILE'] = self.etcd_server_cert
             os.environ['ETCD_KEY_FILE'] = self.etcd_server_key
             os.environ['ETCD_TRUSTED_CA_FILE'] = self.rootca_cert_path

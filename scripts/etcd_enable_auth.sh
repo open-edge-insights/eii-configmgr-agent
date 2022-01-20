@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Usage: ./etcd_enable_auth.sh <ETCD_ROOT_PASSWORD>
+# Usage: ./etcd_enable_auth.sh <ETCDROOT_PASSWORD>
 ./etcdctl user add root:$1
 ./etcdctl role add root
 ./etcdctl user grant-role root root

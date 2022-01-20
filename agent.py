@@ -127,7 +127,7 @@ def put_zmqkeys(appname):
 def enable_etcd_auth():
     """Enable Auth for etcd and Create root user with root role
     """
-    password = os.environ['ETCD_ROOT_PASSWORD']
+    password = os.environ['ETCDROOT_PASSWORD']
     LOG.info('Enable etcd auth')
     exec_script("etcd_enable_auth.sh", password)
 
