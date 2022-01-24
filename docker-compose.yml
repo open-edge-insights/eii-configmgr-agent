@@ -69,8 +69,6 @@ services:
     ipc: "none"
     volumes:
       - ./Certificates:/EII/Certificates:rw
-      - ./Certificates/root:/EII/Certificates/root
-      - ./Certificates/rootca:/EII/Certificates/rootca
       - ./eii_config.json:/EII/etcd/config/eii_config.json
       - $EII_INSTALL_PATH:$EII_INSTALL_PATH
       - $EII_INSTALL_PATH/models/:/app/models/

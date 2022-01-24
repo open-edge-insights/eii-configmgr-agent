@@ -32,6 +32,7 @@ import socket
 import json
 from threading import Thread
 from distutils.util import strtobool
+from shutil import rmtree
 import zmq
 import zmq.auth
 
@@ -211,6 +212,18 @@ if __name__ == "__main__":
     SERVICES = ARGS.services
     CONFIG_FILE = ARGS.config
     CERT_DIR = ARGS.certs_dir
+
+    if DEV_MODE:
+        try:
+            for filename in os.listdir(CERT_DIR):
+                filepath = os.path.join(CERT_DIR, filename)
+                try:
+                    LOG.debug('Removing dir/file{}'.format(filepath))
+                    rmtree(filepath)
+                except OSError:
+                    os.remove(filepath)
+        except Exception as e:
+            LOG.exception('Exception occured {}'.format(e))
 
     if SERVICES is None:
         if 'SERVICES' in os.environ:
