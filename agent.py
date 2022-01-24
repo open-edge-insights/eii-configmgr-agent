@@ -203,8 +203,6 @@ if __name__ == "__main__":
                     help='Output directory for certificates')
     AP.add_argument('-s', '--services', dest='services', default=None,
                     nargs='+', help='Services to generate and inject keys into')
-    AP.add_argument('-l', '--log-level', dest='log_level',
-                    choices=LOG_LEVEL.keys(), default='INFO', help='Log level')
     AP.add_argument('-c', '--conifg', dest='config', default='config/eii_config.json',
                     help='Output directory for certificates')
     ARGS = AP.parse_args()
@@ -212,6 +210,15 @@ if __name__ == "__main__":
     SERVICES = ARGS.services
     CONFIG_FILE = ARGS.config
     CERT_DIR = ARGS.certs_dir
+    log_level = 'INFO'
+    configure_logging(log_level)
+    with open(CONFIG_FILE, 'r') as file:
+        config = json.load(file)
+
+    try:
+        log_level = config["/GlobalEnv/"]["PY_LOG_LEVEL"]
+    except KeyError:
+        LOG.exception('PY_LOG_LEVEL key not found in /GlobalEnv/')
 
     if DEV_MODE:
         try:
@@ -232,9 +239,6 @@ if __name__ == "__main__":
                 map(lambda s: s.strip(), os.environ['SERVICES'].split(','))))
         else:
             raise RuntimeError('No specified services')
-
-    # Configure logging
-    configure_logging(ARGS.log_level)
 
     # Setup SIGTERM signal hadnler
     signal.signal(signal.SIGTERM, signal_handler)
@@ -286,3 +290,5 @@ if __name__ == "__main__":
                 LOG.debug('Put zmq keys failder for key: {}'.format(key))
         if not DEV_MODE:
             enable_etcd_auth()
+
+    LOG.info('Provisioning is Done ...')

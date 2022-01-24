@@ -57,4 +57,4 @@ COPY entrypoint.sh ./entrypoint.sh
 RUN chown -R ${EII_UID}:${EII_UID} /EII/Certificates
 RUN chown -R ${EII_UID}:${EII_UID} /EII/etcd
 HEALTHCHECK NONE
-ENTRYPOINT ["./entrypoint.sh", "python3 agent.py -d /EII/Certificates -l DEBUG -c /EII/etcd/config/eii_config.json"]
+ENTRYPOINT ["./entrypoint.sh", "python3 agent.py -d /EII/Certificates -c /EII/etcd/config/eii_config.json"]

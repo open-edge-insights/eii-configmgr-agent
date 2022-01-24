@@ -62,7 +62,7 @@ def get_logger(name):
     global GLOBAL_LOG_LEVEL
     global GLOBAL_LOG_LEVEL_STR
     fmt_str = ('%(asctime)s :: %(levelname)s :: %(name)s :: '
-               '[%(filename)s:%(funcName)s:%(lineno)d)]: %(message)s')
+               '[%(filename)s:%(lineno)d)]: %(message)s')
     logger = logging.getLogger(name)
     logger.setLevel(GLOBAL_LOG_LEVEL)
     coloredlogs.install(
