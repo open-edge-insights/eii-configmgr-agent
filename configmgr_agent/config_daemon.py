@@ -135,7 +135,7 @@ class ConfigDaemon:
                             'DNS:localhost,URI:urn:open62541.server.application'
                     self.generate_service_certs(service, 'server', cert_opts)
                 if 'client_alt_name' in cert_opts:
-                    if service == 'opuca':
+                    if service == 'opcua':
                         os.environ['SAN'] = \
                             'IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*,' + \
                             'DNS:localhost,URI:urn:open62541.client.application'
@@ -157,12 +157,11 @@ class ConfigDaemon:
         client_key = None
         client_cert = None
 
-        if 'output_format' in opts:
-            server_key = f'{base_name}_{peer}_key.key'
-            client_key = f'{base_name}_{peer}_key.key'
         if peer == 'server':
-            # Generate server key
-            server_key = f'{base_name}_server_key.pem'
+            if 'output_format' in opts:
+                server_key = f'{base_name}_{peer}_key.key'
+            else:
+                server_key = f'{base_name}_server_key.pem'
             server_cert = f'{base_name}_server_certificate.pem'
             generate_cert_key_pair(
                 key=service,
@@ -178,9 +177,11 @@ class ConfigDaemon:
                 pa_key_path=self.rootca_key_path,
                 pa_certs_path=self.rootca_certs_path)
         if peer == 'client':
-            client_key = f'{base_name}_client_key.pem'
+            if 'output_format' in opts:
+                client_key = f'{base_name}_{peer}_key.key'
+            else:
+                client_key = f'{base_name}_client_key.pem'
             client_cert = f'{base_name}_client_certificate.pem'
-            # Generate client key
             generate_cert_key_pair(
                 key=service,
                 peer='client',

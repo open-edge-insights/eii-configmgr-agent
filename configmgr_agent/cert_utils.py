@@ -66,11 +66,19 @@ def generate_openssl_cnf(
     return tmp_cnf_fn
 
 
-def openssl_req(cnf_fn, *args, **kwargs):
+def openssl_req(cnf_fn, service, *args, **kwargs):
     """Execute the openssl req command.
     """
-    cmd = ['openssl', 'req', '-config', cnf_fn] + list(args)
     try:
+        if service not in ["OpcuaExport_Server","opcua"]:
+            cmd = ["openssl", "req", "-config", cnf_fn] + list(args)
+        else:
+            req_args = list(args)
+            req_args.append("-addext")
+            req_args.append("subjectAltName = {}".format(os.getenv("SAN")))
+            req_args.append("-addext")
+            req_args.append("keyUsage = Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment, Certificate Sign")
+            cmd = ["openssl", "req", "-x509", "-sha256"] + list(req_args)
         sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as exc:
         raise RuntimeError(
@@ -118,6 +126,7 @@ def generate_rootca(
         common_name, client_alt_name, server_alt_name, cnf_template)
     try:
         openssl_req(cnf_path,
+                    common_name,
                     '-x509',
                     '-days', '3650',
                     '-newkey', f'rsa:{ssl_key_length}',
@@ -144,30 +153,16 @@ def generate_cert_key_pair(
         key, client_alt_name, server_alt_name, cnf_template)
 
     try:
-        if key not in ['OpcuaExport_Server', 'opcua']:
-            openssl_req(cnf_path,
-                        '-new',
-                        '-newkey', f'rsa:{ssl_key_length}',
-                        '-keyout', private_key_path,
-                        '-out', req_pem_path,
-                        '-days', '3650',
-                        '-outform', 'PEM',
-                        '-subj', f'/CN={key}/O={peer}/L=$$$/',
-                        '-nodes')
-        else:
-            openssl_req(cnf_path,
-                        '-new',
-                        '-newkey', f'rsa:{ssl_key_length}',
-                        '-keyout', private_key_path,
-                        '-out', req_pem_path,
-                        '-days', '3650',
-                        '-outform', 'PEM',
-                        '-subj', f'/CN={key}/O={peer}/L=$$$/',
-                        '-nodes',
-                        '-addext', f'subjectAltName = {os.getenv("SAN")}',
-                        '-addext', 'keyUsage = Digital Signature, Non Repudiation, \
-                        Key Encipherment, Data Encipherment, Certificate Sign'
-                        )
+        openssl_req(cnf_path,
+                    key,
+                    '-new',
+                    '-newkey', f'rsa:{ssl_key_length}',
+                    '-keyout', private_key_path,
+                    '-out', req_pem_path,
+                    '-days', '3650',
+                    '-outform', 'PEM',
+                    '-subj', f'/CN={key}/O={peer}/L=$$$/',
+                    '-nodes')
 
         if key not in ['OpcuaExport_Server', 'opcua']:
             openssl_ca(cnf_path,
@@ -197,6 +192,7 @@ def generate_cert_key_pair(
                             '-out', f'{base_dir}_{peer}_key.der',
                             '-inform', 'PEM',
                             '-outform', 'DER')
+
     finally:
         # Delete CNF file
         os.remove(cnf_path)
