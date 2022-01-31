@@ -70,6 +70,7 @@ services:
     volumes:
       - ./Certificates:/EII/Certificates:rw
       - ./eii_config.json:/EII/etcd/config/eii_config.json
+      - $EII_INSTALL_PATH/data/etcd:$ETCD_DATA_DIR
       - $EII_INSTALL_PATH:$EII_INSTALL_PATH
       - $EII_INSTALL_PATH/models/:/app/models/
       - $EII_INSTALL_PATH/sockets:$SOCKET_DIR

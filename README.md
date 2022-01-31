@@ -36,5 +36,12 @@ sequenceDiagram
     EIIService->>ETCD: Connect to ETCD with certificate to get configuration
 ```
 
->**Note:** Any EII service `waits/restarts` if the config manager data store client key
+>**Note:** 
+> Any EII service `waits/restarts` if the config manager data store client key
 and certificates are yet to be made available for the container.
+
+ **Optional:** For capturing the data back from Etcd to a JSON file, run the etcd_capture.sh script. This can be achieved using the following command:
+
+```
+$ docker exec -it ia_configmgr_agent ./scripts/etcd_capture.sh
+```
