@@ -191,7 +191,7 @@ def config_daemon():
     try:
         daemon = ConfigDaemon(ARGS.certs_dir, SERVICES, DEV_MODE, CONFIG_FILE)
         LOG.info('Etcd is Running...')
-    except Exception as execption:
+    except Exception as exception:
         LOG.exception('Error running config daemon: {}'.format(exception))
 
 
@@ -255,25 +255,30 @@ if __name__ == "__main__":
 
         os.environ['ETCDCTL_ENDPOINTS'] = os.getenv('ETCD_HOST') \
             + ':' + os.getenv('ETCD_CLIENT_PORT')
-        PORT_UP = check_port_availability(os.environ['ETCD_HOST'], os.environ['ETCD_CLIENT_PORT'])
+        PORT_UP = check_port_availability(os.environ['ETCD_HOST'],
+                                          os.environ['ETCD_CLIENT_PORT'])
 
         if not PORT_UP:
-            LOG.exception('Etcd port {} is not up on {}' \
-                    .format(os.environ["ETCD_CLIENT_PORT"], os.environ["ETCD_HOST"]))
+            LOG.exception('Etcd port {} is not up on {}'
+                          .format(os.environ["ETCD_CLIENT_PORT"], os.environ["ETCD_HOST"]))
             sys.exit(1)
         else:
-            LOG.info('Etcd port {} is up on {}' \
-                    .format(os.environ['ETCD_CLIENT_PORT'], os.environ['ETCD_HOST']))
+            LOG.info('Etcd port {} is up on {}'
+                     .format(os.environ['ETCD_CLIENT_PORT'], os.environ['ETCD_HOST']))
 
         if not DEV_MODE:
-            os.environ['ETCD_CERT_FILE'] = os.path.join(CERT_DIR, \
-                    "etcdserver/etcdserver_server_certificate.pem")
-            os.environ['ETCD_KEY_FILE'] = os.path.join(CERT_DIR, \
-                    "etcdserver/etcdserver_server_key.pem")
-            os.environ['ETCD_TRUSTED_CA_FILE'] = os.path.join(CERT_DIR, "rootca/cacert.pem")
-            os.environ['ETCDCTL_CACERT'] = os.path.join(CERT_DIR, "rootca/cacert.pem")
-            os.environ['ETCDCTL_CERT'] = os.path.join(CERT_DIR, "root/root_client_certificate.pem")
-            os.environ['ETCDCTL_KEY'] = os.path.join(CERT_DIR, "root/root_client_key.pem")
+            os.environ['ETCD_CERT_FILE'] = os.path.join(CERT_DIR,
+                                                        "etcdserver/etcdserver_server_certificate.pem")
+            os.environ['ETCD_KEY_FILE'] = os.path.join(CERT_DIR,
+                                                       "etcdserver/etcdserver_server_key.pem")
+            os.environ['ETCD_TRUSTED_CA_FILE'] = os.path.join(CERT_DIR,
+                                                              "rootca/cacert.pem")
+            os.environ['ETCDCTL_CACERT'] = os.path.join(CERT_DIR,
+                                                        "rootca/cacert.pem")
+            os.environ['ETCDCTL_CERT'] = os.path.join(CERT_DIR,
+                                                      "root/root_client_certificate.pem")
+            os.environ['ETCDCTL_KEY'] = os.path.join(CERT_DIR,
+                                                     "root/root_client_key.pem")
         etcd_health_check()
 
         APP_CERT_TYPE = get_cert_type(CONFIG_FILE)

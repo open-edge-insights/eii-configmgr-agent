@@ -70,14 +70,16 @@ def openssl_req(cnf_fn, service, *args, **kwargs):
     """Execute the openssl req command.
     """
     try:
-        if service not in ["OpcuaExport_Server","opcua"]:
+        if service not in ["OpcuaExport_Server", "opcua"]:
             cmd = ["openssl", "req", "-config", cnf_fn] + list(args)
         else:
             req_args = list(args)
             req_args.append("-addext")
             req_args.append("subjectAltName = {}".format(os.getenv("SAN")))
             req_args.append("-addext")
-            req_args.append("keyUsage = Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment, Certificate Sign")
+            req_args.append("keyUsage = Digital Signature, Non Repudiation,"
+                            "Key Encipherment, Data Encipherment,",
+                            "Certificate Sign")
             cmd = ["openssl", "req", "-x509", "-sha256"] + list(req_args)
         sp.check_output(cmd, stderr=sp.STDOUT)
     except sp.CalledProcessError as exc:
@@ -144,9 +146,10 @@ def generate_rootca(
 
 
 def generate_cert_key_pair(
-        key, peer, opts, base_dir, private_key_path, cert_path, client_alt_name,
-        server_alt_name, req_pem_path, pa_cert_path, pa_key_path,
-        pa_certs_path, ssl_key_length=3072, cnf_template='config/openssl.cnf'):
+        key, peer, opts, base_dir, private_key_path, cert_path,
+        client_alt_name, server_alt_name, req_pem_path, pa_cert_path,
+        pa_key_path, pa_certs_path, ssl_key_length=3072,
+        cnf_template='config/openssl.cnf'):
     """Generate certificate and key pair.
     """
     cnf_path = generate_openssl_cnf(

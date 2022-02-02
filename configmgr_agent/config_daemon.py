@@ -59,7 +59,8 @@ class ConfigDaemon:
 
             for service in self.services:
                 service_cert_dir = os.path.join(certs_dir, service)
-                self.log.info('Creating certs directory for service: {}'.format(service_cert_dir))
+                self.log.info('Creating certs directory for service: {}'
+                              .format(service_cert_dir))
                 if os.getenv("Provision_Mode", "") != "k8s":
                     os.makedirs(service_cert_dir, exist_ok=True)
 
@@ -85,14 +86,14 @@ class ConfigDaemon:
             with open('config/x509_cert_config.json') as conf_file:
                 self.opts = json.load(conf_file)
 
-            self.etcd_server_key = os.path.join(certs_dir, 'etcdserver', \
-                    'etcdserver_server_key.pem')
-            self.etcd_server_cert = os.path.join(certs_dir, 'etcdserver', \
-                    'etcdserver_server_certificate.pem')
-            self.etcd_client_key = os.path.join(certs_dir, 'root', \
-                    'root_client_key.pem')
-            self.etcd_client_cert = os.path.join(certs_dir, 'root', \
-                    'root_client_certificate.pem')
+            self.etcd_server_key = os.path.join(certs_dir, 'etcdserver',
+                                                'etcdserver_server_key.pem')
+            self.etcd_server_cert = os.path.join(certs_dir, 'etcdserver',
+                                                 'etcdserver_server_certificate.pem')
+            self.etcd_client_key = os.path.join(certs_dir, 'root',
+                                                'root_client_key.pem')
+            self.etcd_client_cert = os.path.join(certs_dir, 'root',
+                                                 'root_client_certificate.pem')
 
             # get dict in the form of <service:cert_type>
             app_cert_type = get_cert_type(self.config_file)
@@ -100,8 +101,8 @@ class ConfigDaemon:
                 cert_details = {'client_alt_name': ''}
                 self.opts['certs'].append({service: cert_details})
                 if service == 'OpcuaExport':
-                    self.opts['certs'].append({'opcua':{'client_alt_name': '', \
-                            'output_format': 'DER'}})
+                    self.opts['certs'].append({'opcua': {'client_alt_name': '',
+                                                         'output_format': 'DER'}})
 
                 if 'pem' in cert_type:
                     cert_name = service + '_Server'
@@ -124,7 +125,6 @@ class ConfigDaemon:
         self._start_etcd()
         self._health_check()
 
-
     def _generate_certs(self):
         for cert in self.opts['certs']:
             for service, cert_opts in cert.items():
@@ -140,7 +140,6 @@ class ConfigDaemon:
                             'IP:127.0.0.1,DNS:etcd,DNS:ia_configmgr_agent,DNS:*,' + \
                             'DNS:localhost,URI:urn:open62541.client.application'
                     self.generate_service_certs(service, 'client', cert_opts)
-
 
     def generate_service_certs(self, service, peer, opts):
         """Helper function to generate the keys for a given service.
@@ -196,7 +195,6 @@ class ConfigDaemon:
                 pa_key_path=self.rootca_key_path,
                 pa_certs_path=self.rootca_certs_path)
 
-
     def _start_etcd(self):
         """Start ETCD
         """
@@ -211,13 +209,11 @@ class ConfigDaemon:
         except Exception as execption:
             self.log.exception(f"ETCD failed to launch: '{execption}' ")
 
-
     def _health_check(self):
         """Execute ETCD health check script.
         """
         self.log.info('Executing health check on ETCD service')
         exec_script('etcd_health_check.sh')
-
 
     def _setup_dirs(self):
         """Create all of the directories.
@@ -235,7 +231,6 @@ class ConfigDaemon:
         index_file = open(os.path.join(self.rootca_dir, 'index.txt.attr'), 'w')
         index_file.close
 
-
     def _setup_openssl_env(self):
         """Setup required OpenSSL environmental variables.
 
@@ -247,8 +242,8 @@ class ConfigDaemon:
         if 'SSL_KEY_LENGTH' not in os.environ:
             os.environ['SSL_KEY_LENGTH'] = '3072'
 
-        os.environ['SAN'] = ('IP:127.0.0.1,DNS:ia_configmgr_agent,DNS:configmgragent,\
-                             DNS:*,DNS:localhost,'
+        os.environ['SAN'] = ('IP:127.0.0.1,DNS:ia_configmgr_agent, \
+                             DNS:configmgragent,DNS:*,DNS:localhost,'
                              'URI:urn:unconfigured:application')
         if 'SSL_SAN_IP' not in os.environ:
             os.environ['SSL_SAN_IP'] = ''
