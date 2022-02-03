@@ -75,4 +75,7 @@ services:
       - $EII_INSTALL_PATH/models/:/app/models/
       - $EII_INSTALL_PATH/sockets:$SOCKET_DIR
       - $EII_INSTALL_PATH/data:/data
+      - $EII_INSTALL_PATH/tools_output:/tools_output
+      - $EII_INSTALL_PATH/saved_images:/saved_images
+      - $EII_INSTALL_PATH/rde:/rde
       - $TC_DISPATCHER_PATH:$TC_DISPATCHER_PATH
