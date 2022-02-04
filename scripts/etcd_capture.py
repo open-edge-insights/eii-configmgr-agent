@@ -96,7 +96,7 @@ def main():
 
     etcd_dict = dict(zip(key_list, value_list))
 
-    with open('./data/etcd_capture_data.json', 'w') as json_file:
+    with open('./data/etcd_capture/etcd_capture_data.json', 'w') as json_file:
         json.dump(etcd_dict, json_file, sort_keys=True, indent=4)
 
 

@@ -39,9 +39,9 @@ function helpFunction {
 }
 
 function etcdCapture {
-    mkdir -p data
+    mkdir -p data/etcd_capture
     python3 scripts/etcd_capture.py $@
-    echo "etcd captured data will be found at $EII_INSTALL_PATH/data/etcd/etcd_capture_data.json"
+    echo "etcd captured data will be found at $EII_INSTALL_PATH/data/etcd_capture_data.json"
 }
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
