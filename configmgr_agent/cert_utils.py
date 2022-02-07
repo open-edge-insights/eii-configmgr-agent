@@ -78,7 +78,7 @@ def openssl_req(cnf_fn, service, *args, **kwargs):
             req_args.append("subjectAltName = {}".format(os.getenv("SAN")))
             req_args.append("-addext")
             req_args.append("keyUsage = Digital Signature, Non Repudiation,"
-                            "Key Encipherment, Data Encipherment,",
+                            "Key Encipherment, Data Encipherment,"
                             "Certificate Sign")
             cmd = ["openssl", "req", "-x509", "-sha256"] + list(req_args)
         sp.check_output(cmd, stderr=sp.STDOUT)
