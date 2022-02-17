@@ -222,13 +222,14 @@ if __name__ == "__main__":
 
     if DEV_MODE:
         try:
-            for filename in os.listdir(CERT_DIR):
-                filepath = os.path.join(CERT_DIR, filename)
-                try:
-                    LOG.debug('Removing dir/file{}'.format(filepath))
-                    rmtree(filepath)
-                except OSError:
-                    os.remove(filepath)
+            if os.path.exists(CERT_DIR):
+                for filename in os.listdir(CERT_DIR):
+                    filepath = os.path.join(CERT_DIR, filename)
+                    try:
+                        LOG.debug('Removing dir/file{}'.format(filepath))
+                        rmtree(filepath)
+                    except OSError:
+                        os.remove(filepath)
         except Exception as e:
             LOG.exception('Exception occured {}'.format(e))
 
