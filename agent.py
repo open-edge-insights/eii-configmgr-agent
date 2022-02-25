@@ -220,18 +220,19 @@ if __name__ == "__main__":
     except KeyError:
         LOG.exception('PY_LOG_LEVEL key not found in /GlobalEnv/')
 
-    if DEV_MODE:
-        try:
-            if os.path.exists(CERT_DIR):
-                for filename in os.listdir(CERT_DIR):
-                    filepath = os.path.join(CERT_DIR, filename)
-                    try:
-                        LOG.debug('Removing dir/file{}'.format(filepath))
-                        rmtree(filepath)
-                    except OSError:
-                        os.remove(filepath)
-        except Exception as e:
-            LOG.exception('Exception occured {}'.format(e))
+    try:
+        LOG.warning('Removing Old Certificates')
+        LOG.warning('Certificates will be generated everytime when provisioning is done ..')
+        if os.path.exists(CERT_DIR):
+            for filename in os.listdir(CERT_DIR):
+                filepath = os.path.join(CERT_DIR, filename)
+                try:
+                    LOG.debug('Removing dir/file{}'.format(filepath))
+                    rmtree(filepath)
+                except OSError:
+                    os.remove(filepath)
+    except Exception as e:
+        LOG.exception('Exception occured {}'.format(e))
 
     if SERVICES is None:
         if 'SERVICES' in os.environ:
