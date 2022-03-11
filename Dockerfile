@@ -56,5 +56,8 @@ COPY agent.py .
 COPY entrypoint.sh ./entrypoint.sh
 RUN chown -R ${EII_UID}:${EII_UID} /EII/Certificates
 RUN chown -R ${EII_UID}:${EII_UID} /EII/etcd
+
+RUN apt-get remove --auto-remove --purge -y python3-pip
+
 HEALTHCHECK NONE
 ENTRYPOINT ["./entrypoint.sh", "python3 agent.py -d /EII/Certificates -c /EII/etcd/config/eii_config.json"]
