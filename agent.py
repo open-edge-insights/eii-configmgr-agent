@@ -155,32 +155,6 @@ def clear_etcd_kv():
     execute_cmd(["./etcdctl", "del", "--prefix",
                  ETCD_PREFIX + "/"])
 
-
-def check_port_availability(hostname, port):
-    """Verifies port availability on hostname for accepting connection
-
-    :param hostname: hostname of the machine
-    :type hostname: str
-    :param port: port
-    :type port: str
-    :return: port_up (whether port is up or not)
-    :rtype: Boolean
-    """
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    LOG.debug("Attempting to connect to {}:{}".format(hostname, port))
-    num_retries = 1000
-    retry_count = 0
-    port_up = False
-    while retry_count < num_retries:
-        if sock.connect_ex((hostname, int(port))):
-            LOG.debug("{} port is up on {}".format(port, hostname))
-            port_up = True
-            break
-        retry_count += 1
-        time.sleep(0.1)
-    return port_up
-
-
 def signal_handler(sig, frame):
     """SIGTERM signal handler.
     """
@@ -257,16 +231,6 @@ if __name__ == "__main__":
 
         os.environ['ETCDCTL_ENDPOINTS'] = os.getenv('ETCD_HOST') \
             + ':' + os.getenv('ETCD_CLIENT_PORT')
-        PORT_UP = check_port_availability(os.environ['ETCD_HOST'],
-                                          os.environ['ETCD_CLIENT_PORT'])
-
-        if not PORT_UP:
-            LOG.exception('Etcd port {} is not up on {}'
-                          .format(os.environ["ETCD_CLIENT_PORT"], os.environ["ETCD_HOST"]))
-            sys.exit(1)
-        else:
-            LOG.info('Etcd port {} is up on {}'
-                     .format(os.environ['ETCD_CLIENT_PORT'], os.environ['ETCD_HOST']))
 
         if not DEV_MODE:
             os.environ['ETCD_CERT_FILE'] = os.path.join(CERT_DIR,
