@@ -1,16 +1,15 @@
-Config Manager Agent
-====================
+# Config Manager Agent
 
+>**Note:** In this document, you will find labels of 'Edge Insights for Industrial (EII)' for filenames, paths, code snippets, and so on. Consider the references of EII as Open Edge Insights (OEI). This is due to the product name change of EII as OEI.
 
-Config Manager Agent is a EII service responsible for below:
-- Puts the EII services configs to EII config manager data store
-- Additionally in PROD mode, generates
-  - Required config manager data store keys/certificates to interact with 
-  EII config manager data store like etcd and puts in the volume mounts to be shared with
-  other EII services
-  - Required messagebus keys for EII services communication
-- Creates required provisioning folders with the right permissions needed for other 
-  EII services via volume mounts
+Config Manager Agent is an OEI service responsible for the following:
+
+- Puts the OEI services configs to the OEI config manager data store
+- Additionally in PROD mode, generates the following:
+  - Required config manager data store keys/certificates to interact with OEI config manager data store like etcd and puts in the volume mounts to be shared with
+  other OEI services
+  - Required messagebus keys for OEI services communication
+- Creates required provisioning folders with the right permissions needed for other OEI services via volume mounts
 
 The diagram below shows a high level flow of `ConfigMgrAgent` service .
 
@@ -36,13 +35,12 @@ sequenceDiagram
     EIIService->>ETCD: Connect to ETCD with certificate to get configuration
 ```
 
->**Note:** 
-> Any EII service `waits/restarts` if the config manager data store client key
-and certificates are yet to be made available for the container.
+>**Note:**
+> Any EII service `waits/restarts` if the config manager data store client key and certificates are yet to be made available for the container.
 > EII Certificates will be re-generated everytime the ConfigMgrAgent service brought up/restarted
 
  **Optional:** For capturing the data back from Etcd to a JSON file, run the etcd_capture.sh script. This can be achieved using the following command:
 
-```
-$ docker exec -it ia_configmgr_agent ./scripts/etcd_capture.sh
+```sh
+ docker exec -it ia_configmgr_agent ./scripts/etcd_capture.sh
 ```
